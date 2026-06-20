@@ -1,63 +1,56 @@
-"""Live Berkeley resource lookup via Browserbase — falls back to static URLs."""
+"""Legacy facade that routes ``response_builder`` to the new finder agents.
+
+The agent code imports ``fetch_live_resources(domain, query)`` directly. We keep
+that signature stable and dispatch to the right :mod:`browserbase` finder under
+the hood — so the swap to the richer multi-URL crawl is transparent to callers.
+"""
 
 from __future__ import annotations
 
-import os
-from typing import Any
+from core.config import settings
 
-BROWSERBASE_API_KEY = os.getenv("BROWSERBASE_API_KEY", "")
+from .browserbase import (
+    find_food_resources,
+    find_housing_resources,
+    find_scholarships,
+    find_wellness_resources,
+)
 
-DOMAIN_SITES: dict[str, list[str]] = {
-    "food": [
-        "https://basicneeds.berkeley.edu/pantry",
-        "https://basicneeds.berkeley.edu/faq/calfresh",
-    ],
-    "housing": [
-        "https://basicneeds.berkeley.edu",
-        "https://bsc.coop",
-    ],
-    "financial_aid": [
-        "https://financialaid.berkeley.edu",
-        "https://financialaid.berkeley.edu/apply-now/apply-for-aid/federal-updates/",
-    ],
-    "scholarship": [
-        "https://financialaid.berkeley.edu",
-    ],
-    "wellness": [
-        "https://uhs.berkeley.edu/counseling",
-    ],
-    "safety": [
-        "https://ucpd.berkeley.edu",
-    ],
-    "academic": [
-        "https://berkeleytime.com",
-        "https://classes.berkeley.edu",
-    ],
+_DOMAIN_FINDERS = {
+    "food": find_food_resources,
+    "housing": find_housing_resources,
+    "scholarship": find_scholarships,
+    "financial_aid": find_scholarships,
+    "wellness": find_wellness_resources,
 }
 
 
 def fetch_live_resources(domain: str, query: str) -> list[dict[str, str]] | None:
-    """
-    Return live resources when Browserbase is configured.
-    Person 3 can swap in real Stagehand/Browserbase crawl here.
-    """
-    if not BROWSERBASE_API_KEY:
-        return None
+    """Run the matching finder agent and return resource dicts for the UI cards.
 
-    try:
-        import httpx
-
-        # Placeholder: Person 3 wires real Browserbase session crawl.
-        # For now, mark URLs as live-checked when API key is present.
-        sites = DOMAIN_SITES.get(domain, [])
-        return [
-            {
-                "name": f"Live Berkeley resource ({domain})",
-                "url": url,
-                "value": "Live via Browserbase",
-                "effort": "Verified during query",
-            }
-            for url in sites[:2]
-        ]
-    except Exception:
+    Returns ``None`` when Browserbase is not configured so existing callers fall
+    back to the static resource list shipped in ``DOMAIN_KNOWLEDGE``.
+    """
+    if not settings.browserbase_api_key:
         return None
+    finder = _DOMAIN_FINDERS.get(domain)
+    if finder is None:
+        return None
+    payload = finder()
+    resources = payload.get("resources", [])
+    if not resources:
+        return None
+    live_view_url = payload.get("live_view_url")
+    return [
+        {
+            "name": r.get("name") or "Live Berkeley resource",
+            "url": r.get("url") or "",
+            "value": r.get("value") or "",
+            "effort": r.get("effort") or "",
+            "deadline": r.get("deadline") or "",
+            "notes": r.get("notes") or "",
+            "source": "browserbase",
+            "live_view_url": live_view_url or "",
+        }
+        for r in resources
+    ]

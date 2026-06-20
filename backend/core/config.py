@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     arize_api_key: str = ""
 
     redis_url: str = ""
+    redis_index_prefix: str = "jugaad"
+    redis_vector_dim: int = 384
+    redis_semantic_cache_threshold: float = 0.12
+
+    browserbase_api_key: str = ""
+    browserbase_project_id: str = ""
+    browserbase_region: str = "us-west-2"
 
 
 settings = Settings()
