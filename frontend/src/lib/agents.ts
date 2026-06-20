@@ -8,7 +8,7 @@ export const AGENTS: AgentDefinition[] = [
     port: 8000,
     color: "#FDB515",
     icon: "🎯",
-    description: "Receives user problems via Fetch.ai mailbox protocol, routes to specialists, and merges responses.",
+    description: "Receives student problems on Agentverse, routes to specialist hosted agents, and merges responses.",
     capabilities: ["Intent classification", "Multi-agent routing", "Response merging", "Chat protocol handler"],
   },
   {
