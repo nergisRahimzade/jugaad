@@ -1,0 +1,26 @@
+{
+  "note": "130% Federal Poverty Level gross monthly income limits for CalFresh eligibility (2025-2026). Updated April 2026.",
+  "thresholds": {
+    "1": 1580,
+    "2": 2137,
+    "3": 2694,
+    "4": 3250,
+    "5": 3807,
+    "6": 4364,
+    "7": 4921,
+    "8": 5478
+  },
+  "student_exemptions": [
+    "Receives Pell Grant",
+    "Works 20+ hours per week",
+    "Enrolled in federal work-study and currently working",
+    "Has dependents under age 6",
+    "Single parent with dependents",
+    "Receives Supplemental Security Income (SSI)"
+  ],
+  "april_2026_changes": {
+    "daca": "DACA recipients no longer qualify for federal CalFresh as of April 1, 2026. Refer to California Food Assistance Program (CFAP) instead.",
+    "visa_holders": "Certain visa holders lost federal SNAP eligibility. CFAP may apply.",
+    "us_citizens_unchanged": "No changes for US citizens and lawful permanent residents."
+  }
+}
