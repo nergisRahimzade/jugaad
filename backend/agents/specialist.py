@@ -3,9 +3,10 @@
 from uagents import Agent, Context
 
 from .config import AgentConfig
-from .knowledge import get_domain_response
 from .models import JugaadQuery, JugaadResponse
 from .protocols import jugaad_protocol
+from .response_builder import build_domain_response
+from .services.band_room import publish as band_publish
 
 
 def create_specialist_agent(cfg: AgentConfig) -> Agent:
@@ -21,7 +22,11 @@ def create_specialist_agent(cfg: AgentConfig) -> Agent:
     @jugaad_protocol.on_message(model=JugaadQuery, replies=JugaadResponse)
     async def handle_query(ctx: Context, sender: str, msg: JugaadQuery) -> None:
         ctx.logger.info(f"[{cfg.name}] Query from {sender}: {msg.user_message[:80]}")
-        payload = get_domain_response(cfg.domain, msg.user_message)
+        payload = build_domain_response(cfg.domain, msg.user_message, msg.student_profile)
+
+        band_triggers = band_publish(msg.request_id, cfg.domain, payload["summary"])
+        if band_triggers:
+            ctx.logger.info(f"[{cfg.name}] Band room triggered: {band_triggers}")
 
         await ctx.send(
             sender,

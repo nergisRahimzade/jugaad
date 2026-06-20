@@ -58,8 +58,34 @@ ACADEMIC = AgentConfig(
     domain="academic",
 )
 
-SPECIALISTS = [FOOD, HOUSING, FINANCIAL_AID, SAFETY, ACADEMIC]
+WELLNESS = AgentConfig(
+    name="jugaad-wellness-agent",
+    seed=os.getenv("WELLNESS_AGENT_SEED", "jugaad-wellness-agent-seed-berkeley-2026"),
+    port=8006,
+    domain="wellness",
+)
+
+SCHOLARSHIP = AgentConfig(
+    name="jugaad-scholarship-agent",
+    seed=os.getenv("SCHOLARSHIP_AGENT_SEED", "jugaad-scholarship-agent-seed-berkeley-2026"),
+    port=8007,
+    domain="scholarship",
+)
+
+SPECIALISTS = [
+    FOOD,
+    HOUSING,
+    FINANCIAL_AID,
+    SAFETY,
+    ACADEMIC,
+    WELLNESS,
+    SCHOLARSHIP,
+]
 
 AGENTVERSE_API_KEY = os.getenv("AGENTVERSE_API_KEY", "")
 ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY", "")
+REDIS_URL = os.getenv("REDIS_URL", "")
+BROWSERBASE_API_KEY = os.getenv("BROWSERBASE_API_KEY", "")
+BAND_API_KEY = os.getenv("BAND_API_KEY", "")
+BAND_ROOM_ID = os.getenv("BAND_ROOM_ID", "")
 PUBLIC_AGENT_ENDPOINT = os.getenv("PUBLIC_AGENT_ENDPOINT", "")

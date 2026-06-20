@@ -1,88 +1,62 @@
 # Fetch.ai Multi-Agent Lead — Person 1
 
-This folder is your vertical. It implements the **Jugaad Coordinator + 5 specialist agents** on Fetch.ai uAgents with ASI:One-compatible chat protocol.
+8 agents: **Coordinator + 7 specialists** (Food, Housing, Financial Aid, Scholarship, Wellness, Safety, Academic).
 
-## Quick start (local demo)
+## Quick start
 
 ```bash
 cd backend
-python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Add AGENTVERSE_API_KEY and ASI_ONE_API_KEY when ready
 
-# Terminal 1 — run all 6 agents
-python -m agents.run_bureau
+# All agents + auto demo
+RUN_DEMO=1 python -m agents.run_bureau
 
-# Terminal 2 — demo query (Fetch.ai sponsor moment)
+# Manual demo
 python -m agents.demo_client "I need help paying for food."
 ```
 
-Expected: Coordinator routes to **Food + Financial Aid** agents in parallel and returns a merged survival plan.
+**Food demo routes to:** Food + Financial Aid + Scholarship (cross-domain triggers).
 
-## Your checklist (from team split)
+## Integrations
 
-| Task | Status | How |
-|------|--------|-----|
-| Agentverse account | ✅ You have this | agentverse.ai |
-| ASI:One Pro | ✅ You have this | asi1.ai |
-| Install uAgents SDK | ✅ | `pip install -r requirements.txt` |
-| Build Coordinator | ✅ | `agents/coordinator.py` |
-| Build 5 specialists | ✅ | `agents/specialist.py` + knowledge base |
-| Agent-to-agent comms | ✅ | `JugaadQuery` / `JugaadResponse` via Bureau |
-| Coordinator routing | ✅ | Keyword router + cross-domain triggers |
-| Register on Agentverse | 🔲 You do this | See below |
-| Make discoverable | 🔲 You do this | README + keywords in Agentverse UI |
-| Demo for judges | 🔲 Practice | Agentverse dashboard + live bureau |
+| Service | Env var | Status |
+|---------|---------|--------|
+| Fetch.ai uAgents | built-in | ✅ Bureau + mailbox |
+| Agentverse | `AGENTVERSE_API_KEY` | Register via `register_agents.py` |
+| ASI:One Pro | `ASI_ONE_API_KEY` | ✅ Personalizes specialist summaries |
+| Band | `BAND_API_KEY`, `BAND_ROOM_ID` | ✅ Shared room + REST fallback |
+| Redis | `REDIS_URL` | ✅ Vector search hook (Person 3 fills data) |
+| Browserbase | `BROWSERBASE_API_KEY` | ✅ Live resource hook (Person 3 wires crawl) |
 
-## Register agents on Agentverse
+## Band cross-domain triggers
 
-1. Run bureau once and copy agent addresses from terminal output.
-2. Set `AGENTVERSE_API_KEY` in `.env`.
-3. Connect mailbox (Coordinator):
-   - Click the **Agent Inspector** URL in terminal
-   - Connect → **Mailbox** → Finish
-4. For production demo, deploy bureau to Railway and set:
-   ```
-   PUBLIC_AGENT_ENDPOINT=https://your-app.railway.app/submit
-   ```
-5. Register:
-   ```bash
-   python -m agents.register_agents
-   ```
-6. In Agentverse UI for each agent:
-   - Set handle (e.g. `@jugaad-food`)
-   - Add keywords: `berkeley`, `food`, `calfresh`, `student`, `hackathon`
-   - Mark **Active**
+| Agent detects | Also activates |
+|---------------|----------------|
+| Financial aid stress | Food, Wellness |
+| Food insecurity | Financial Aid, Scholarship |
+| Academic struggle | Wellness, Financial Aid |
+| Wellness stress | Financial Aid |
 
-## ASI:One Pro integration (optional enhancement)
+Band events appear in merged response and terminal logs.
 
-The coordinator uses chat protocol so ASI:One Chat can talk to it directly. To add ASI:One LLM reasoning inside a specialist, pass `ASI_ONE_API_KEY` and call `https://api.asi1.ai/v1` (see Fetch Innovation Lab docs).
+## Agent manifest
 
-## Integration points for teammates
+| Agent | Domain |
+|-------|--------|
+| Coordinator | routes all queries |
+| Food | food |
+| Housing | housing |
+| Financial Aid | financial_aid |
+| Scholarship | scholarship |
+| Wellness | wellness |
+| Safety | safety |
+| Academic | academic |
 
-| Teammate | Integration |
-|----------|-------------|
-| Person 2 (Claude) | Replace keyword routing in `routing.py` with Claude classification; enrich responses |
-| Person 3 (Redis) | Swap `knowledge.py` static data with Redis vector search |
-| Person 4 (Frontend) | POST user message to coordinator via chat protocol or FastAPI wrapper |
+## Sponsor demo (60 sec)
 
-## Sponsor demo script (60 sec)
-
-1. Open **Agentverse dashboard** — show 6 agents with real addresses.
-2. Run demo client: *"I need help paying for food."*
-3. Point to terminal logs: Food + Financial Aid agents activated in parallel.
-4. Show merged CalFresh + emergency aid plan in response.
-5. Say: *"Cross-domain intelligence — financial stress automatically triggers food hacks."*
-
-## Agent ports
-
-| Agent | Port |
-|-------|------|
-| Coordinator | 8000 |
-| Food | 8001 |
-| Housing | 8002 |
-| Financial Aid | 8003 |
-| Safety | 8004 |
-| Academic | 8005 |
+1. Agentverse dashboard — 8 agents with real addresses
+2. `RUN_DEMO=1 python -m agents.run_bureau`
+3. Show logs: Food + Financial Aid + Scholarship + Band room events
+4. Point to merged CalFresh + aid + scholarship plan

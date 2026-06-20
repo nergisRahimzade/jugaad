@@ -13,17 +13,11 @@ from uagents_core.contrib.protocols.chat import (
     chat_protocol_spec,
 )
 
-from .config import (
-    ACADEMIC,
-    COORDINATOR,
-    FINANCIAL_AID,
-    FOOD,
-    HOUSING,
-    SAFETY,
-)
+from .config import COORDINATOR
 from .models import JugaadQuery, JugaadResponse
 from .protocols import jugaad_protocol
 from .routing import route_domains
+from .services.band_room import create_session, format_band_context
 
 DOMAIN_TO_ADDRESS: dict[str, str] = {}
 
@@ -40,7 +34,7 @@ coordinator = Agent(
 )
 
 
-def _merge_responses(responses: list[JugaadResponse]) -> str:
+def _merge_responses(responses: list[JugaadResponse], request_id: str) -> str:
     """Merge specialist outputs into a personalized survival plan."""
     if not responses:
         return (
@@ -52,15 +46,19 @@ def _merge_responses(responses: list[JugaadResponse]) -> str:
     for idx, resp in enumerate(responses, start=1):
         lines.append(f"## {idx}. {resp.domain.replace('_', ' ').title()} ({resp.agent_name})")
         lines.append(resp.summary)
-        for rec in resp.recommendations[:3]:
+        for rec in resp.recommendations[:5]:
             lines.append(f"- {rec}")
         if resp.resources:
             top = resp.resources[0]
             lines.append(f"- Top resource: {top['name']} → {top['url']}")
         lines.append("")
 
+    band_note = format_band_context(request_id)
+    if band_note:
+        lines.append(band_note)
+
     lines.append(
-        "_Agents collaborated via Fetch.ai mailbox protocol. "
+        "\n_Agents collaborated via Fetch.ai uAgents + Band shared room. "
         "Show Agentverse dashboard to verify live agent addresses._"
     )
     return "\n".join(lines)
@@ -69,9 +67,6 @@ def _merge_responses(responses: list[JugaadResponse]) -> str:
 @coordinator.on_event("startup")
 async def on_startup(ctx: Context) -> None:
     ctx.logger.info(f"Coordinator address: {coordinator.address}")
-    ctx.logger.info(
-        "Specialist routing map will be populated after bureau startup."
-    )
 
 
 @jugaad_protocol.on_message(model=JugaadResponse)
@@ -95,7 +90,7 @@ async def collect_specialist_response(ctx: Context, sender: str, msg: JugaadResp
     if expected - received:
         return
 
-    merged = _merge_responses([JugaadResponse(**r) for r in responses])
+    merged = _merge_responses([JugaadResponse(**r) for r in responses], msg.request_id)
     reply_to = pending["reply_to"]
 
     await ctx.send(
@@ -139,6 +134,7 @@ async def handle_user_chat(ctx: Context, sender: str, msg: ChatMessage) -> None:
 
     domains = route_domains(user_text)
     request_id = str(uuid4())
+    create_session(request_id)
 
     ctx.storage.set(
         f"pending:{request_id}",

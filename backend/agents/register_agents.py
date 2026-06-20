@@ -1,19 +1,12 @@
 """
 Register Jugaad agents on Agentverse for ASI:One discoverability.
 
-Prerequisites:
-  1. Copy backend/.env.example → backend/.env
-  2. Set AGENTVERSE_API_KEY from agentverse.ai → Profile → API Keys
-  3. Run agents once locally to confirm addresses (python -m agents.run_bureau)
-
 Usage:
   cd backend && python -m agents.register_agents
 """
 
-import os
 import sys
 
-from dotenv import load_dotenv
 from uagents import Agent
 from uagents_core.utils.registration import (
     AgentverseRequestError,
@@ -30,9 +23,9 @@ from .config import (
     HOUSING,
     PUBLIC_AGENT_ENDPOINT,
     SAFETY,
+    SCHOLARSHIP,
+    WELLNESS,
 )
-
-load_dotenv()
 
 README_TEMPLATE = """![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
 ![domain:jugaad](https://img.shields.io/badge/domain-jugaad-3D8BD3)
@@ -47,12 +40,12 @@ README_TEMPLATE = """![tag:hackathon](https://img.shields.io/badge/hackathon-5F4
 ## Capabilities
 - Berkeley student resource navigation
 - Personalized hack stack recommendations
-- Multi-agent collaboration via Fetch.ai uAgents
+- Multi-agent collaboration via Fetch.ai uAgents + Band shared rooms
+- Redis knowledge graph + Browserbase live search (when configured)
 
 ## Example queries
 {examples}
 """
-
 
 AGENT_METADATA = [
     (
@@ -68,7 +61,7 @@ AGENT_METADATA = [
     (
         FOOD,
         "Jugaad Food Agent",
-        "CalFresh stacking, food pantry access, free food calendar, and food insecurity hacks for UC Berkeley.",
+        "CalFresh stacking, food pantry, free food calendar, and food surplus network for UC Berkeley.",
         [
             "How do I apply for CalFresh as a student?",
             "Where is the food pantry on campus?",
@@ -78,7 +71,7 @@ AGENT_METADATA = [
     (
         HOUSING,
         "Jugaad Housing Agent",
-        "BSC co-op housing, emergency bridge housing, rent control rights, and lease guidance for Berkeley students.",
+        "BSC co-op housing, emergency bridge housing, rent control, and lease red-flag scanning.",
         [
             "I might be homeless this week.",
             "How do I apply to BSC co-ops?",
@@ -88,7 +81,7 @@ AGENT_METADATA = [
     (
         FINANCIAL_AID,
         "Jugaad Financial Aid Agent",
-        "Emergency grants, Special Circumstances appeals, micro-scholarships, and fee payment plans.",
+        "Special Circumstances appeals, emergency loans, fee payment plans, and Basic Needs fund.",
         [
             "FAFSA is delayed — what can I do?",
             "Find me emergency financial aid.",
@@ -96,9 +89,29 @@ AGENT_METADATA = [
         ],
     ),
     (
+        SCHOLARSHIP,
+        "Jugaad Scholarship Agent",
+        "Micro-scholarship scan across Berkeley departments, cultural centers, and professional orgs.",
+        [
+            "Find me scholarships I can apply for this week.",
+            "What small awards am I eligible for?",
+            "Help me draft a scholarship essay.",
+        ],
+    ),
+    (
+        WELLNESS,
+        "Jugaad Wellness Agent",
+        "Let's Talk drop-ins, SHIP therapist bypass, CAPS urgent pathway, and peer support matching.",
+        [
+            "I can't get a CAPS appointment.",
+            "Where is Let's Talk today?",
+            "I'm overwhelmed and stressed about finals.",
+        ],
+    ),
+    (
         SAFETY,
         "Jugaad Safety Agent",
-        "SafeWalk, walking buddy matching, safe route recommendations for late-night campus travel.",
+        "SafeWalk, walking buddy matching, and safe route recommendations for late-night travel.",
         [
             "I need to walk from Main Stacks to Unit 2 late at night.",
             "Is Telegraph safe after 10pm?",
@@ -108,7 +121,7 @@ AGENT_METADATA = [
     (
         ACADEMIC,
         "Jugaad Academic Agent",
-        "BerkeleyTime enrollment strategy, study groups, prerequisite checks, and academic survival hacks.",
+        "BerkeleyTime enrollment strategy, study groups, UC Extension backdoor, and prerequisite checks.",
         [
             "I'm failing CS 10 — what are my options?",
             "How do I find an easier section on BerkeleyTime?",
@@ -138,7 +151,7 @@ def register_all() -> None:
     if not PUBLIC_AGENT_ENDPOINT:
         print(
             "WARNING: PUBLIC_AGENT_ENDPOINT not set — using localhost.\n"
-            "For judging, deploy to Railway/Fly and set a public HTTPS endpoint.\n"
+            "Deploy to Railway/Fly and set a public HTTPS endpoint before judging.\n"
         )
 
     for cfg, display_name, description, examples in AGENT_METADATA:
@@ -152,7 +165,7 @@ def register_all() -> None:
         try:
             register_chat_agent(
                 name=display_name,
-                endpoint=endpoint if cfg.domain == "coordinator" else endpoint,
+                endpoint=endpoint,
                 active=True,
                 credentials=credentials,
                 readme=readme,
