@@ -7,6 +7,7 @@ import { Menu, X } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Home" },
+  { href: "/intake", label: "Get Started" },
   { href: "/agents", label: "Fetch.ai Agents" },
   { href: "/demo", label: "Live Demo" },
   { href: "/dashboard", label: "Dashboard" },
@@ -56,10 +57,10 @@ export function Navbar() {
         </nav>
 
         <Link
-          href="/demo"
+          href="/intake"
           className="hidden sm:inline-flex items-center gap-2 rounded-full bg-berkeley-gold px-4 py-2 text-sm font-semibold text-berkeley-blue transition hover:bg-[#ffc940] hover:shadow-lg hover:shadow-berkeley-gold/20"
         >
-          Try Demo
+          Get Started
         </Link>
 
         <button

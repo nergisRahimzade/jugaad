@@ -38,16 +38,16 @@ export default function HomePage() {
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
-                  href="/agents"
+                  href="/intake"
                   className="inline-flex items-center gap-2 rounded-full bg-berkeley-gold px-6 py-3 text-sm font-semibold text-berkeley-blue hover:bg-[#ffc940] hover:shadow-lg hover:shadow-berkeley-gold/25 transition"
                 >
-                  Fetch.ai Agent Demo <ArrowRight size={16} />
+                  Get My Hack Stack <ArrowRight size={16} />
                 </Link>
                 <Link
-                  href="/demo"
+                  href="/agents"
                   className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white hover:bg-white/5 transition"
                 >
-                  Live Voice Demo
+                  Fetch.ai Agent Demo
                 </Link>
               </div>
 
