@@ -1,8 +1,8 @@
-# BearBasics 🐻
+# Jugaad 
  
 > **Your personal financial advocate — food, housing, and aid for every UC student.**
  
-BearBasics is an AI-powered resource navigator built for UC students experiencing food insecurity, housing instability, or financial hardship. Rather than dumping a generic list of links, BearBasics learns your specific situation and surfaces exactly what you qualify for — then helps you apply.
+Jugaad is an AI-powered resource navigator built for UC students experiencing food insecurity, housing instability, or financial hardship. Rather than dumping a generic list of links, Jugaad learns your specific situation and surfaces exactly what you qualify for — then helps you apply.
  
 Built at **UC Berkeley AI Hackathon 2026** by team **Jugaad** (700+ projects, 1300+ participants).
  
@@ -10,13 +10,13 @@ Built at **UC Berkeley AI Hackathon 2026** by team **Jugaad** (700+ projects, 13
  
 ## The Problem
  
-**1 in 3 UC students experiences food insecurity.** Most don't know what aid they qualify for, miss deadlines, or feel too ashamed to ask. Existing resource pages are generic, outdated, and overwhelming. BearBasics changes that.
+**1 in 3 UC students experiences food insecurity.** Most don't know what aid they qualify for, miss deadlines, or feel too ashamed to ask. Existing resource pages are generic, outdated, and overwhelming. Jugaad changes that.
  
 ---
  
 ## What It Does
  
-BearBasics is a three-step loop:
+Jugaad is a three-step loop:
  
 1. **Learn** — A conversational AI agent interviews you in under 5 minutes, learning your campus, income, housing status, and aid history.
 2. **Match** — Three specialized Fetch.ai agents run in parallel to surface every food, housing, and financial aid resource you personally qualify for — ranked by urgency and value.
@@ -196,11 +196,14 @@ Text "START" to (510) XXX-XXXX
 | Layer | Technology | Why |
 |---|---|---|
 | Frontend | Next.js 14 + Tailwind CSS | Fast to build, polished output |
+| Voice | Deepgram STT + TTS | Push-to-talk intake and voice responses |
 | AI — Core | Claude claude-sonnet-4-6 | Intake, recommendations, peer chat, Apply Now generation |
 | AI — Agents | Fetch.ai uAgents + Agentverse | True multi-agent parallel resource fetching |
 | AI — Ops | Cognition | Autonomous self-healing data maintenance |
 | Backend | FastAPI (Python) | Plays natively with Fetch.ai Python SDK |
 | Database | Supabase (Postgres) | Instant auth + real-time + scheduled functions |
+| Cache + Memory | Redis | User session memory, vector search, semantic cache |
+| Web Agents | Browserbase | Live scholarship + resource scraping from Berkeley sites |
 | SMS | Twilio | Accessible fallback for low-connectivity users |
 | Email | Resend | Deadline alert digests |
 | Deployment | Vercel (frontend) + Railway (FastAPI) | Sub-5-minute deploys |
@@ -210,27 +213,31 @@ Text "START" to (510) XXX-XXXX
 ## Architecture
  
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      Next.js Frontend                    │
-│         Intake UI · Dashboard · Apply Now · Chat         │
-└───────────────────────┬─────────────────────────────────┘
-                        │ REST
-┌───────────────────────▼─────────────────────────────────┐
-│                     FastAPI Backend                      │
-│          Profile router · Agent orchestrator             │
-└──────┬──────────────┬──────────────────┬────────────────┘
-       │              │                  │
-┌──────▼──────┐ ┌─────▼──────┐  ┌───────▼──────┐
-│  Claude API │ │ Fetch.ai   │  │  Supabase    │
-│  Intake +   │ │ Agentverse │  │  Profiles +  │
-│  Apply Now  │ │ 3 Agents   │  │  Resources   │
-└─────────────┘ └─────┬──────┘  └──────────────┘
-                      │
-         ┌────────────┼────────────┐
-    ┌────▼────┐ ┌─────▼────┐ ┌────▼─────┐
-    │  Food   │ │ Housing  │ │   Aid    │
-    │  Agent  │ │  Agent   │ │  Agent   │
-    └─────────┘ └──────────┘ └──────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        Next.js Frontend                           │
+│   Landing · Voice Chat · Agent Feed · Resource Dashboard · Map    │
+└──────────┬──────────────────────────────────────┬───────────────┘
+           │ REST                                  │ Deepgram STT/TTS
+┌──────────▼──────────────────────────────────────▼───────────────┐
+│                        FastAPI Backend                            │
+│              Profile router · Agent orchestrator                  │
+└────┬──────────────┬──────────────┬──────────────┬───────────────┘
+     │              │              │              │
+┌────▼────┐  ┌──────▼─────┐ ┌─────▼──────┐ ┌────▼──────┐
+│  Claude │  │  Fetch.ai  │ │   Redis    │ │Browserbase│
+│  Core   │  │ Agentverse │ │  Memory +  │ │  Web      │
+│  AI     │  │  6 Agents  │ │  Cache     │ │  Agents   │
+└─────────┘  └──────┬─────┘ └────────────┘ └───────────┘
+                    │
+     ┌──────────────┼───────────────────┐
+┌────▼────┐  ┌──────▼──────┐  ┌─────────▼──────┐
+│  Food   │  │   Housing   │  │  Financial Aid  │
+│  Agent  │  │   Agent     │  │  Agent          │
+└─────────┘  └─────────────┘  └────────────────┘
+┌────────────────┐  ┌───────────────┐
+│ Safety Agent   │  │ Academic Agent│
+└────────────────┘  └───────────────┘
+           ↑ All coordinated by Jugaad Coordinator Agent
 ```
  
 ---
@@ -289,6 +296,9 @@ FETCH_AI_AGENT_KEY=
 COGNITION_API_KEY=
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
+REDIS_URL=
+BROWSERBASE_API_KEY=
+DEEPGRAM_API_KEY=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 RESEND_API_KEY=
@@ -304,6 +314,221 @@ Built at UC Berkeley AI Hackathon 2026.
  
 ---
  
+## Team Split & Assignments
+ 
+Each person owns one vertical end-to-end — setup, build, deliverables, and sponsor prize. All four tracks must be demo-ready independently, then integrated in the final hour.
+ 
+---
+ 
+### Person 1 — Fetch.ai + Multi-Agent Lead
+**Goal: Win Fetch.ai prize**
+ 
+**Setup (do first):**
+- [ ] Attend Fetch.ai workshop at the hackathon
+- [ ] Install Fetch.ai uAgents SDK (`pip install uagents`)
+- [ ] Create Agentverse account at [agentverse.ai](https://agentverse.ai)
+- [ ] Register all agents on Agentverse and make them discoverable
+**Agents to build:**
+ 
+| Agent | Responsibility |
+|---|---|
+| Jugaad Coordinator Agent | Receives user problem, routes to correct specialist agents, merges responses |
+| Food Agent | CalFresh eligibility, campus food pantries, emergency meal swipes, dining relief |
+| Housing Agent | Basic Needs emergency housing, FAFSA housing gap, sublease boards |
+| Financial Aid Agent | Emergency grants, scholarships by major/status, Pell/Cal Grant checks |
+| Safety Agent | Campus safety resources, mental health crisis lines, emergency contacts |
+| Academic Agent | Tutoring resources, registration holds from unpaid bills, academic fee deferrals |
+ 
+**Demo flow to hit:**
+```
+User: "I need help paying for food."
+→ Coordinator Agent receives message
+→ Routes to: Food Agent + Financial Aid Agent
+→ Both run in parallel on Agentverse
+→ Returns: Personalized food survival plan with specific resources + aid options
+```
+ 
+**Deliverables:**
+- [ ] All 6 agents registered with real addresses on Agentverse
+- [ ] Agent-to-agent communication working via mailbox protocol
+- [ ] Coordinator correctly routes requests to relevant specialist agents
+- [ ] Demo showing at least 3 agents collaborating on one user query
+- [ ] Agentverse dashboard visible during demo to prove it's real
+**Sponsor targets:** Fetch.ai · Most Technical Hack · Band
+ 
+---
+ 
+### Person 2 — AI / Claude Lead
+**Goal: Win Anthropic + Best Golden Bear Hack**
+ 
+**Setup (do first):**
+- [ ] Set up Anthropic SDK (`pip install anthropic`)
+- [ ] Test Claude claude-sonnet-4-6 API connection
+- [ ] Design system prompt architecture (one master prompt + domain-specific sub-prompts)
+**Build:**
+ 
+| Component | Description |
+|---|---|
+| Main orchestrator prompt | Master system prompt that defines Jugaad' persona — empathetic, practical, never preachy |
+| Food recommendation logic | Matches student profile to food resources, explains eligibility in plain language |
+| Housing recommendation logic | Assesses housing urgency, generates FAFSA appeal letters, surfaces emergency options |
+| Financial aid recommendation logic | Scholarship matching by major/citizenship/status, emergency grant personal statements |
+| Safety recommendation logic | Sensitive, trauma-informed responses for students in unsafe situations |
+| Academic recommendation logic | Addresses academic holds tied to financial issues, connects to campus resources |
+ 
+**Features to own:**
+ 
+| Feature | What to build |
+|---|---|
+| Personalized hack stacks | A curated 3–5 resource "survival pack" tailored to the student's specific situation |
+| First 30 Days Checklist | Auto-generated action plan: what to do in the first 30 days as a student in need |
+| CalFresh eligibility checker | Conversational flow that determines SNAP eligibility and pre-fills intake summary |
+| Scholarship recommendation engine | Matches scholarships from the database to student's major, GPA band, and status |
+ 
+**Demo flow to hit:**
+```
+User says: "I'm struggling with housing."
+→ Claude understands the problem type
+→ Calls Housing Agent (via Coordinator)
+→ Generates personalized response: specific resources + drafted appeal letter + next steps
+```
+ 
+**Deliverables:**
+- [ ] Intake interview agent working end-to-end
+- [ ] "Apply Now" generates real pre-filled content (personal statements, letters) from user profile
+- [ ] Peer Navigator Chat handles emotional + practical questions in the right tone
+- [ ] All Claude responses are personalized to the student profile, not generic
+**Sponsor targets:** Anthropic · Best Golden Bear Hack · Ddoski's World Grand Prize
+ 
+---
+ 
+### Person 3 — Data + Web Agents Lead
+**Goal: Win Browserbase + Redis**
+ 
+**Setup (do first):**
+- [ ] Spin up Redis instance (Redis Cloud free tier or Railway)
+- [ ] Set up Browserbase account and test a simple scrape
+- [ ] Design the knowledge graph schema (resource types, relationships, eligibility rules)
+**Redis — build:**
+ 
+| Component | Description |
+|---|---|
+| User memory | Persists student profile across sessions so they don't re-answer questions |
+| Session memory | Stores conversation context for multi-turn Claude interactions |
+| Knowledge graph | Graph of resources, eligibility rules, and relationships between aid programs |
+| Vector search | Embeds resource descriptions so Claude can semantically match user problems to resources |
+| Semantic cache | Caches common Claude responses (e.g. "what is CalFresh?") to reduce latency and API cost |
+ 
+**Browserbase agents — build:**
+ 
+| Agent | What it searches |
+|---|---|
+| Scholarship finder | Scrapes Berkeley financial aid pages, external scholarship boards for current opportunities |
+| Food resource finder | Scrapes campus dining pages, local food bank sites for current hours and availability |
+| Housing resource finder | Scrapes Basic Needs Center, off-campus housing boards for live listings |
+| Mental health resource finder | Scrapes CAPS (Berkeley counseling), crisis line pages for current availability |
+ 
+**Database to populate:**
+ 
+- CalFresh resources (income thresholds, application links, office hours)
+- Food pantry resources (locations, hours, what to bring, eligibility)
+- Housing hacks (emergency contacts, sublease boards, FAFSA appeal templates)
+- Safety resources (campus police non-emergency, CARE office, shelter contacts)
+- Mental health resources (CAPS hours, warmlines, crisis texts)
+- Academic resources (tutoring, registration hold resolution, fee deferral contacts)
+**Demo flow to hit:**
+```
+User: "Find me scholarships."
+→ Browserbase agent searches Berkeley financial aid pages live
+→ Returns: Current scholarship opportunities with deadlines and eligibility
+→ Results cached in Redis for next user with similar profile
+```
+ 
+**Deliverables:**
+- [ ] Redis connected and storing user profiles across sessions
+- [ ] At least 2 Browserbase agents returning live results during demo
+- [ ] Knowledge graph queryable with at least 30 seeded resources
+- [ ] Vector search returning semantically relevant resources for test queries
+**Sponsor targets:** Browserbase · Redis · Most Technical Hack
+ 
+---
+ 
+### Person 4 — Frontend + Voice + Demo Lead
+**Goal: Win Deepgram + Best UI/UX**
+ 
+**Setup (do first):**
+- [ ] Initialize Next.js 14 project with Tailwind CSS
+- [ ] Set up Deepgram account and test STT/TTS
+- [ ] Create Vercel project for instant deploys
+**Pages to build:**
+ 
+| Page | What it contains |
+|---|---|
+| Landing page | Hero with impact counter, one-line value prop, "Get Started" CTA |
+| Voice chat page | Push-to-talk button, transcript display, agent activity feed, voice response playback |
+| Agent activity feed | Real-time display of which agents are active, what they're doing, results coming in |
+| Berkeley Problem Map | Visual map of campus with pins for food pantries, housing offices, mental health centers |
+| Resource dashboard | Personalized resource cards ranked by urgency, with "Apply Now" buttons |
+ 
+**Deepgram — build:**
+ 
+| Feature | Description |
+|---|---|
+| Speech-to-Text | Capture user voice input via push-to-talk, transcribe to text for Claude |
+| Text-to-Speech | Convert Claude's response to natural voice audio, play back to user |
+| Push-to-talk button | Large, accessible mic button — primary interaction mode on voice chat page |
+| Voice responses | Full spoken response playback after each agent returns results |
+ 
+**Visual components:**
+ 
+| Component | Description |
+|---|---|
+| Agent status indicators | Live badges showing each agent as idle → thinking → responding |
+| Real-time agent actions | Ticker showing "Food Agent searching CalFresh database..." as it happens |
+| Problem map visualization | Interactive campus map with color-coded resource pins and info cards |
+| User profile panel | Sidebar showing the student's profile summary and match stats |
+ 
+**Demo flow to hit:**
+```
+User presses microphone button
+Speaks: "I can't afford food this week."
+→ Voice input captured by Deepgram STT
+→ Agents activate (visible in activity feed)
+→ Resource cards populate on dashboard
+→ Deepgram TTS plays back: "I found 4 resources for you. The closest food pantry opens tomorrow at 9am..."
+```
+ 
+**Extra tasks (demo day):**
+- [ ] Devpost screenshots — capture every major screen before the hackathon ends
+- [ ] Demo video — 90-second screen recording of the full voice flow
+- [ ] Pitch slides — 5 slides max: problem, solution, demo, tech, impact
+- [ ] Final presentation — own the live demo moment
+**Deliverables:**
+- [ ] All 5 pages built and navigable
+- [ ] Voice flow working end-to-end (speak → agents → spoken response)
+- [ ] Agent activity feed updates in real time during a query
+- [ ] App deployed to Vercel with a shareable URL before judging
+**Sponsor targets:** Deepgram · Best UI/UX · Hacker's Choice
+ 
+---
+ 
+## Sponsor Prize Map
+ 
+| Sponsor | Owner | Key Demo Moment |
+|---|---|---|
+| Fetch.ai | Person 1 | Show Agentverse with 3+ agents collaborating live |
+| Anthropic | Person 2 | Show personalized personal statement generated in real time |
+| Browserbase | Person 3 | Show live scholarship search returning current results |
+| Redis | Person 3 | Show session memory persisting across a page refresh |
+| Deepgram | Person 4 | Full voice flow: speak → agents → spoken response |
+| Best UI/UX | Person 4 | Agent activity feed + problem map + polished dashboard |
+| Most Technical | Persons 1 + 3 | Multi-agent architecture + vector search + live web scraping |
+| Best Golden Bear | Person 2 | Depth of Claude personalization for UC Berkeley students |
+| Hacker's Choice | Person 4 | Voice-first experience, demo video, overall polish |
+| Ddoski's Grand Prize | Persons 2 + 4 | End-to-end impact story + real student use case |
+ 
+---
+ 
 ## Impact
  
-> 700,000+ UC students are enrolled across the UC system. An estimated 230,000+ experience some form of food or housing insecurity. BearBasics is built to reach all of them.
+> 700,000+ UC students are enrolled across the UC system. An estimated 230,000+ experience some form of food or housing insecurity. Jugaad is built to reach all of them.
