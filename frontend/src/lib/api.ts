@@ -75,7 +75,7 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const api = {
-  intakeStart: (): Promise<IntakeStartResponse> => get("/intake/start"),
+  intakeStart: (): Promise<IntakeStartResponse> => post("/intake/start", {}),
 
   intakeContinue: (
     session_id: string,
