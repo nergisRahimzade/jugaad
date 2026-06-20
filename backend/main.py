@@ -1,3 +1,6 @@
+from core.instrumentation import setup as _setup_arize
+_setup_arize()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
