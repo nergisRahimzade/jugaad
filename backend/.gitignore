@@ -1,5 +1,12 @@
-venv/
-.env
 __pycache__/
+*.py[cod]
+*.pyo
 *.pyc
+.env
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.DS_Store
 *_data.json
