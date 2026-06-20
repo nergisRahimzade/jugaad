@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     arize_api_key: str = ""
 
     redis_url: str = ""
+    resend_api_key: str = ""
 
 
 settings = Settings()
