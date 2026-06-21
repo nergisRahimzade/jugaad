@@ -1,134 +1,226 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Search, Layers, Bot } from "lucide-react";
+import { ArrowRight, Heart, Shield, BookOpen } from "lucide-react";
+import { motion } from "framer-motion";
 import { Hero3D } from "@/components/Hero3D";
 
 const STATS = [
-  { value: "17,000", label: "food-insecure students" },
-  { value: "3,300+", label: "housing insecure" },
-  { value: "8", label: "Fetch.ai uAgents live" },
-  { value: "61%", label: "report stress obstacle" },
+  { value: "39%", label: "of Berkeley students experience food insecurity" },
+  { value: "1 in 5", label: "face housing instability" },
+  { value: "$292", label: "average monthly CalFresh benefit" },
+  { value: "Free", label: "always — for every Berkeley student" },
 ];
+
+const HOW_IT_WORKS = [
+  {
+    icon: Heart,
+    color: "#f87171",
+    title: "Tell us what's going on",
+    desc: "Answer a few short questions about your situation. No judgment, no paperwork — just a conversation.",
+  },
+  {
+    icon: Shield,
+    color: "#34d399",
+    title: "Get matched to real resources",
+    desc: "We find food, housing, money, and mental health support that actually fits your circumstances.",
+  },
+  {
+    icon: BookOpen,
+    color: "#a78bfa",
+    title: "We help you apply",
+    desc: "For every resource, we generate the application letter, eligibility summary, or action steps — ready to copy.",
+  },
+];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  show:   { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  show: { transition: { staggerChildren: 0.1 } },
+};
 
 export default function HomePage() {
   return (
     <>
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-berkeley-gold/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-14 pb-20 lg:pt-24">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-12 pb-20 lg:pt-20">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-mono text-muted mb-6">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                UC Berkeley AI Hackathon 2026 · Ddoski&apos;s World
-              </div>
+            {/* Left — text */}
+            <motion.div initial="hidden" animate="show" variants={stagger}>
 
-              <h1 className="font-serif text-5xl sm:text-6xl lg:text-7xl text-white leading-[1.05] tracking-tight">
-                Student resources,{" "}
-                <span className="gradient-text">matched by AI</span>
-              </h1>
+              {/* Eyebrow */}
+              <motion.div variants={fadeUp} transition={{ duration: 0.5 }}>
+                <div className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs text-white/50 mb-7"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Free for UC Berkeley students
+                </div>
+              </motion.div>
 
-              <p className="mt-6 text-lg text-muted max-w-lg leading-relaxed">
-                Voice-powered platform that finds food, housing, financial aid, wellness, and safety
-                resources for Berkeley students — powered by{" "}
-                <strong className="text-white">8 Fetch.ai uAgents</strong>, Deepgram voice, and a
-                live knowledge graph.
-              </p>
+              {/* Headline */}
+              <motion.h1
+                variants={fadeUp}
+                transition={{ duration: 0.6 }}
+                className="font-serif text-5xl sm:text-6xl lg:text-[4rem] text-white leading-[1.08] tracking-tight"
+              >
+                You deserve to know{" "}
+                <span className="gradient-text">what&apos;s available to you.</span>
+              </motion.h1>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              {/* Sub */}
+              <motion.p
+                variants={fadeUp}
+                transition={{ duration: 0.5 }}
+                className="mt-6 text-lg leading-relaxed"
+                style={{ color: "#9299ae" }}
+              >
+                Jugaad finds food assistance, housing support, emergency grants, mental health care, and more — matched to your specific situation in minutes.
+              </motion.p>
+
+              {/* CTAs */}
+              <motion.div
+                variants={fadeUp}
+                transition={{ duration: 0.5 }}
+                className="mt-9 flex flex-wrap gap-3"
+              >
                 <Link
                   href="/intake"
-                  className="inline-flex items-center gap-2 rounded-full bg-berkeley-gold px-6 py-3 text-sm font-semibold text-berkeley-blue hover:bg-[#ffc940] hover:shadow-lg hover:shadow-berkeley-gold/25 transition"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-semibold transition-all hover:scale-105"
+                  style={{
+                    background: "linear-gradient(135deg, #fdb515, #ffcc55)",
+                    color: "#09080f",
+                    boxShadow: "0 4px 20px rgba(253,181,21,0.3)",
+                  }}
                 >
-                  Get My Hack Stack <ArrowRight size={16} />
+                  Find My Resources <ArrowRight size={16} />
                 </Link>
                 <Link
-                  href="/agents"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white hover:bg-white/5 transition"
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-medium transition-all hover:bg-white/8"
+                  style={{
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "rgba(255,255,255,0.7)",
+                  }}
                 >
-                  Fetch.ai Agent Demo
+                  View Dashboard
                 </Link>
-              </div>
+              </motion.div>
 
-              <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {STATS.map(({ value, label }) => (
-                  <div key={label}>
-                    <div className="font-serif text-2xl sm:text-3xl text-berkeley-gold">{value}</div>
-                    <div className="text-xs text-muted mt-0.5">{label}</div>
-                  </div>
+              {/* Stats */}
+              <motion.div
+                variants={fadeUp}
+                transition={{ duration: 0.5 }}
+                className="mt-12 grid grid-cols-2 gap-x-8 gap-y-5"
+              >
+                {STATS.map(({ value, label }, i) => (
+                  <motion.div
+                    key={label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 + i * 0.08, duration: 0.4 }}
+                  >
+                    <div className="font-serif text-2xl sm:text-3xl" style={{ color: "#fdb515" }}>{value}</div>
+                    <div className="text-xs mt-0.5 leading-snug" style={{ color: "#9299ae" }}>{label}</div>
+                  </motion.div>
                 ))}
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-            <Hero3D className="animate-float" />
+            {/* Right — 3D */}
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <Hero3D />
+            </motion.div>
           </div>
         </div>
       </section>
 
       {/* How it works */}
-      <section className="border-t border-white/5 py-20">
+      <section style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }} className="py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <h2 className="font-serif text-3xl sm:text-4xl text-white mb-12">
-            How it works
-          </h2>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mb-14"
+          >
+            <h2 className="font-serif text-3xl sm:text-4xl text-white">How it works</h2>
+            <p className="mt-3 text-base" style={{ color: "#9299ae" }}>
+              Three steps to finding the support you need.
+            </p>
+          </motion.div>
 
           <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Search,
-                title: "Describe your situation",
-                desc: "Speak or type your problem. Deepgram transcribes, the Coordinator routes to the right agents.",
-              },
-              {
-                icon: Layers,
-                title: "Get matched resources",
-                desc: "Agents search Redis + live Berkeley sites and return stacked resources — CalFresh, pantry, aid, and more.",
-              },
-              {
-                icon: Bot,
-                title: "Multi-agent coordination",
-                desc: "8 Fetch.ai uAgents collaborate via mailbox protocol and Band cross-triggers.",
-              },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="glass rounded-2xl p-6 hover:border-white/15 transition">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-berkeley-gold/10 text-berkeley-gold mb-4">
-                  <Icon size={20} />
+            {HOW_IT_WORKS.map(({ icon: Icon, color, title, desc }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.45, delay: i * 0.1 }}
+                className="rounded-2xl p-6 transition-all hover:-translate-y-0.5"
+                style={{
+                  background: "rgba(15,14,24,0.6)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }}
+              >
+                <div
+                  className="flex h-11 w-11 items-center justify-center rounded-2xl mb-5"
+                  style={{ background: `${color}18` }}
+                >
+                  <Icon size={20} color={color} />
                 </div>
-                <h3 className="font-semibold text-white mb-2">{title}</h3>
-                <p className="text-sm text-muted leading-relaxed">{desc}</p>
-              </div>
+                <h3 className="font-semibold text-white text-base mb-2">{title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: "#9299ae" }}>{desc}</p>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA to Fetch AI */}
-      <section className="py-20 bg-gradient-to-b from-berkeley-blue/20 to-transparent border-t border-white/5">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center">
-          <p className="text-xs font-mono text-berkeley-gold uppercase tracking-[0.2em] mb-4">
-            Fetch.ai integration
-          </p>
-          <h2 className="font-serif text-3xl sm:text-4xl text-white max-w-2xl mx-auto">
-            Real uAgents. Real mailbox protocol. Not a chatbot wrapper.
-          </h2>
-          <p className="mt-4 text-muted max-w-xl mx-auto">
-            Coordinator + 7 specialists on Agentverse testnet. Bureau runner, Band shared rooms,
-            cross-domain triggers.
-          </p>
-          <Link
-            href="/agents"
-            className="inline-flex items-center gap-2 mt-8 rounded-full bg-white/10 border border-white/20 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/15 transition"
+      {/* Bottom CTA */}
+      <section style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }} className="py-24">
+        <div className="mx-auto max-w-2xl px-4 sm:px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55 }}
           >
-            View Fetch.ai Agent Demo <ArrowRight size={16} />
-          </Link>
+            <h2 className="font-serif text-3xl sm:text-4xl text-white mb-4">
+              39% of Berkeley students experience food insecurity.
+            </h2>
+            <p className="text-base mb-8" style={{ color: "#9299ae" }}>
+              Most never find out what they&apos;re eligible for. Jugaad fixes that — in a 5-minute conversation.
+            </p>
+            <Link
+              href="/intake"
+              className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-sm font-semibold transition-all hover:scale-105"
+              style={{
+                background: "linear-gradient(135deg, #fdb515, #ffcc55)",
+                color: "#09080f",
+                boxShadow: "0 4px 24px rgba(253,181,21,0.3)",
+              }}
+            >
+              Find My Resources — It&apos;s Free <ArrowRight size={16} />
+            </Link>
+          </motion.div>
         </div>
       </section>
 
-      <footer className="border-t border-white/5 py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted">
-          <span className="font-serif text-white">Jugaad</span>
-          <span>UC Berkeley AI Hackathon 2026</span>
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }} className="py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: "#9299ae" }}>
+          <span className="font-semibold text-white">Jugaad</span>
+          <span>UC Berkeley AI Hackathon 2026 · Free for all students</span>
         </div>
       </footer>
     </>
