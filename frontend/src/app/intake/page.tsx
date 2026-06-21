@@ -22,11 +22,16 @@ export default function IntakePage() {
       {/* Header */}
       <div className="border-b border-white/5 px-6 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <span className="text-2xl">🛠️</span>
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold flex-shrink-0"
+            style={{ background: "linear-gradient(135deg, #fdb515, #ffcc55)", color: "#09080f" }}
+          >
+            J
+          </div>
           <div>
             <h1 className="text-white font-semibold leading-tight">Jugaad</h1>
             <p className="text-white/40 text-xs">
-              Tell me your situation — I&apos;ll find the hacks that apply to you.
+              A few questions to find the resources that fit your situation.
             </p>
           </div>
         </div>

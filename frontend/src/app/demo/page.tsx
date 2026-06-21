@@ -11,13 +11,12 @@ export default function DemoPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-14">
       <div className="mb-8">
-        <p className="text-xs font-mono text-muted uppercase tracking-wider mb-2">Live Demo</p>
+        <p className="text-xs text-white/30 uppercase tracking-wider mb-2">Live Demo</p>
         <h1 className="font-serif text-3xl sm:text-4xl text-white">
-          Speak your problem. Watch agents collaborate.
+          Describe your situation. Watch it get matched in real time.
         </h1>
-        <p className="mt-2 text-muted max-w-2xl">
-          Voice-first interface powered by Deepgram. Your query routes through the Fetch.ai Coordinator
-          to specialist agents — visible in real time.
+        <p className="mt-2 text-white/50 max-w-2xl">
+          Voice-first interface powered by Deepgram. Your query routes to specialist agents and returns matched resources within seconds.
         </p>
         <Link
           href="/agents"
