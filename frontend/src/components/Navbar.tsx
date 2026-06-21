@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { Menu, User, X } from "lucide-react";
+import { User } from "lucide-react";
 import { profileCompleteness, userInitials } from "@/lib/profile";
 import { useAppState } from "@/context/AppStateContext";
 
@@ -13,13 +12,17 @@ const NAV = [
   { href: "/agents", label: "How It Works" },
 ];
 
-function ProfileButton({ onClick, compact }: { onClick?: () => void; compact?: boolean }) {
+function ProfileButton() {
   const { user, profile } = useAppState();
   const complete = profileCompleteness(profile);
   const signedIn = !!user;
 
-  const inner = (
-    <>
+  return (
+    <Link
+      href="/profile"
+      className="relative flex items-center gap-2 rounded-full border border-white/10 p-1.5 sm:px-2.5 sm:py-1.5 text-white/60 hover:text-white hover:border-white/20 hover:bg-white/5 transition shrink-0"
+      aria-label="Profile"
+    >
       {signedIn ? (
         <span
           className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
@@ -30,7 +33,7 @@ function ProfileButton({ onClick, compact }: { onClick?: () => void; compact?: b
       ) : (
         <User size={20} />
       )}
-      {!compact && signedIn && (
+      {signedIn && (
         <span className="hidden sm:block text-xs text-white/60 max-w-[100px] truncate">
           {user.name.split(" ")[0]}
         </span>
@@ -41,30 +44,12 @@ function ProfileButton({ onClick, compact }: { onClick?: () => void; compact?: b
         }`}
         aria-hidden
       />
-    </>
-  );
-
-  const className =
-    "relative flex items-center gap-2 rounded-full border border-white/10 p-1.5 sm:px-2.5 sm:py-1.5 text-white/60 hover:text-white hover:border-white/20 hover:bg-white/5 transition";
-
-  if (onClick) {
-    return (
-      <button type="button" onClick={onClick} className={className} aria-label="Profile">
-        {inner}
-      </button>
-    );
-  }
-
-  return (
-    <Link href="/profile" className={className} aria-label="Profile">
-      {inner}
     </Link>
   );
 }
 
 export function Navbar() {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
@@ -78,17 +63,17 @@ export function Navbar() {
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 gap-3">
-        <Link href="/" className="group shrink-0">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6">
+        <Link href="/" className="shrink-0">
           <span className="font-semibold text-lg text-white tracking-tight">Jugaad</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+        <nav className="flex flex-1 items-center justify-center gap-0.5 sm:gap-1 min-w-0">
           {NAV.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className={`px-4 py-2 rounded-lg text-sm transition-all ${
+              className={`whitespace-nowrap px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm transition-all ${
                 isActive(href)
                   ? "text-white bg-white/8"
                   : "text-white/50 hover:text-white hover:bg-white/5"
@@ -99,47 +84,8 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <ProfileButton />
-          <button
-            type="button"
-            className="md:hidden p-2 text-white/50 hover:text-white transition"
-            onClick={() => setOpen(!open)}
-            aria-label="Toggle menu"
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
+        <ProfileButton />
       </div>
-
-      {open && (
-        <div
-          className="md:hidden px-4 py-3 space-y-1"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-        >
-          {NAV.map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className={`block px-3 py-2.5 rounded-xl text-sm transition ${
-                isActive(href)
-                  ? "text-white bg-white/8"
-                  : "text-white/60 hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
-          <Link
-            href="/profile"
-            onClick={() => setOpen(false)}
-            className="block px-3 py-2.5 rounded-xl text-sm text-white/60 hover:text-white hover:bg-white/5 transition"
-          >
-            Profile
-          </Link>
-        </div>
-      )}
     </header>
   );
 }

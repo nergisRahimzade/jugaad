@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import CoordinatorChat from "@/components/CoordinatorChat";
 
 export default function ChatPage() {
-  const [initialMessage] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
+  const [initialMessage, setInitialMessage] = useState<string | null>(null);
+
+  useEffect(() => {
     const prompt = sessionStorage.getItem("jugaad_home_prompt");
-    if (prompt) sessionStorage.removeItem("jugaad_home_prompt");
-    return prompt;
-  });
+    if (prompt) {
+      sessionStorage.removeItem("jugaad_home_prompt");
+      setInitialMessage(prompt);
+    }
+  }, []);
 
   return (
     <main className="min-h-[calc(100vh-4rem)] grid-bg noise flex flex-col">

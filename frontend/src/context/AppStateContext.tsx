@@ -109,42 +109,47 @@ interface AppStateContextValue {
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() =>
-    typeof window !== "undefined" ? loadChat() : []
-  );
-  const [orchestration, setOrchestration] = useState<OrchestrationState>(() =>
-    typeof window !== "undefined" ? loadOrchestration() : DEFAULT_ORCH
-  );
-  const [user, setUser] = useState<UserSession | null>(() =>
-    typeof window !== "undefined" ? loadUser() : null
-  );
-  const [profile, setProfileState] = useState<StudentProfile>(() =>
-    typeof window !== "undefined" ? loadProfile() : { ...DEFAULT_PROFILE }
-  );
-  const [profileInitialized, setProfileInitialized] = useState(() =>
-    typeof window !== "undefined" ? loadProfileInitialized() : false
-  );
+  // SSR-safe defaults — storage is read after mount to avoid hydration mismatches.
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [orchestration, setOrchestration] = useState<OrchestrationState>(DEFAULT_ORCH);
+  const [user, setUser] = useState<UserSession | null>(null);
+  const [profile, setProfileState] = useState<StudentProfile>(() => ({ ...DEFAULT_PROFILE }));
+  const [profileInitialized, setProfileInitialized] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    setChatMessages(loadChat());
+    setOrchestration(loadOrchestration());
+    setUser(loadUser());
+    setProfileState(loadProfile());
+    setProfileInitialized(loadProfileInitialized());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
     sessionStorage.setItem(CHAT_KEY, JSON.stringify(chatMessages));
-  }, [chatMessages]);
+  }, [chatMessages, hydrated]);
 
   useEffect(() => {
+    if (!hydrated) return;
     sessionStorage.setItem(
       ORCH_KEY,
       JSON.stringify({ ...orchestration, running: false })
     );
-  }, [orchestration]);
+  }, [orchestration, hydrated]);
 
   useEffect(() => {
+    if (!hydrated) return;
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     sessionStorage.setItem(LEGACY_PROFILE_KEY, JSON.stringify(profile));
-  }, [profile]);
+  }, [profile, hydrated]);
 
   useEffect(() => {
+    if (!hydrated) return;
     if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
     else localStorage.removeItem(USER_KEY);
-  }, [user]);
+  }, [user, hydrated]);
 
   const resetOrchestration = useCallback(() => {
     setOrchestration(DEFAULT_ORCH);
