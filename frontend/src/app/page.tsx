@@ -3,20 +3,66 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Send } from "lucide-react";
+import { Loader2, Mic, MicOff, Send, Volume2, VolumeX } from "lucide-react";
 import Berkeley3DGlobe from "@/components/Berkeley3DGlobe";
+import { useAppState } from "@/context/AppStateContext";
+import { useSpeechToText } from "@/lib/useSpeechToText";
+import { useTextToSpeech } from "@/lib/useTextToSpeech";
 
 export default function HomePage() {
   const router = useRouter();
+  const { chatMessages } = useAppState();
   const [query, setQuery] = useState("");
+  const {
+    listening,
+    transcribing,
+    error: speechError,
+    toggleListening,
+    setError: setSpeechError,
+  } = useSpeechToText();
+  const {
+    speaking,
+    synthesizing,
+    error: ttsError,
+    speak,
+    stop: stopSpeaking,
+  } = useTextToSpeech();
+
+  const latestAssistantText =
+    [...chatMessages].reverse().find((message) => message.role === "assistant" && message.content.trim())
+      ?.content.trim() ?? "";
+  const voiceBusy = listening || transcribing;
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const text = query.trim();
     if (!text) return;
+    stopSpeaking();
     sessionStorage.setItem("jugaad_home_prompt", text);
     router.push("/chat");
   }
+
+  const toggleVoice = async () => {
+    if (transcribing) return;
+    stopSpeaking();
+    setSpeechError(null);
+
+    if (listening) {
+      const text = await toggleListening();
+      if (text.trim()) setQuery(text);
+      return;
+    }
+
+    await toggleListening();
+  };
+
+  const toggleSpokenResponse = () => {
+    if (speaking || synthesizing) {
+      stopSpeaking();
+      return;
+    }
+    if (latestAssistantText) void speak(latestAssistantText);
+  };
 
   return (
     <>
@@ -56,6 +102,50 @@ export default function HomePage() {
               border: "1px solid rgba(255,255,255,0.08)",
             }}
           >
+            <button
+              type="button"
+              onClick={toggleVoice}
+              disabled={transcribing}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all disabled:opacity-25 ${
+                listening
+                  ? "border-red-400/50 bg-red-500/20 text-red-400"
+                  : "border-white/10 text-white/70 hover:bg-white/5 hover:text-white"
+              }`}
+              aria-label={listening ? "Stop recording" : transcribing ? "Transcribing" : "Start voice prompt"}
+            >
+              {listening ? (
+                <MicOff className="h-4 w-4" />
+              ) : transcribing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={toggleSpokenResponse}
+              disabled={!latestAssistantText && !speaking && !synthesizing}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all disabled:opacity-25 ${
+                speaking || synthesizing
+                  ? "border-[#fdb515]/50 bg-[#fdb515]/15 text-[#fdb515]"
+                  : "border-white/10 text-white/70 hover:bg-white/5 hover:text-white"
+              }`}
+              aria-label={
+                speaking
+                  ? "Stop spoken response"
+                  : synthesizing
+                    ? "Generating spoken response"
+                    : "Speak latest assistant response"
+              }
+            >
+              {synthesizing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : speaking ? (
+                <VolumeX className="h-4 w-4" />
+              ) : (
+                <Volume2 className="h-4 w-4" />
+              )}
+            </button>
             <textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -66,12 +156,19 @@ export default function HomePage() {
                 }
               }}
               rows={1}
-              placeholder="Describe what you need..."
-              className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm sm:text-base text-white placeholder-white/35 outline-none min-h-[44px] max-h-32"
+              placeholder={
+                listening
+                  ? "Listening... tap the red mic when done"
+                  : transcribing
+                    ? "Transcribing..."
+                    : "Describe what you need, or tap the mic..."
+              }
+              disabled={voiceBusy}
+              className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm sm:text-base text-white placeholder-white/35 outline-none min-h-[44px] max-h-32 disabled:opacity-50"
             />
             <button
               type="submit"
-              disabled={!query.trim()}
+              disabled={!query.trim() || voiceBusy}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all disabled:opacity-25 hover:opacity-90"
               style={{ background: "#003262", color: "#fdb515" }}
               aria-label="Send"
@@ -79,6 +176,9 @@ export default function HomePage() {
               <Send className="h-4 w-4" />
             </button>
           </div>
+          {(speechError || ttsError) && (
+            <p className="mt-2 text-center text-xs text-red-400/80">{speechError ?? ttsError}</p>
+          )}
         </motion.form>
       </section>
 

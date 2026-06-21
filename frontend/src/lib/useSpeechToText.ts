@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./api";
 
 function getSupportedMimeType(): string {
@@ -173,6 +173,23 @@ export function useSpeechToText() {
     await startListening();
     return "";
   }, [startListening, stopListening]);
+
+  useEffect(() => {
+    return () => {
+      const recorder = recorderRef.current;
+      if (recorder && recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch {
+          // Best-effort cleanup when navigating away.
+        }
+      }
+      stopStream();
+      recorderRef.current = null;
+      listeningRef.current = false;
+      transcribingRef.current = false;
+    };
+  }, [stopStream]);
 
   return {
     listening,

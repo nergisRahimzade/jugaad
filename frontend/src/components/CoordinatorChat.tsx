@@ -108,6 +108,8 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     user,
   } = useAppState();
   const [input, setInput] = useState("");
+  const [selectedAgentDomain, setSelectedAgentDomain] = useState<AgentDomain | null>(null);
+  const [selectedAgentName, setSelectedAgentName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [missingFields, setMissingFields] = useState<string[]>([]);
@@ -140,6 +142,17 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
   const canSpeakLatest = Boolean(latestAssistantText) && !loading && !voiceBusy;
 
   useEffect(() => {
+    const domain = sessionStorage.getItem("jugaad_selected_agent_domain") as AgentDomain | null;
+    const name = sessionStorage.getItem("jugaad_selected_agent_name");
+    if (!domain) return;
+    setSelectedAgentDomain(domain);
+    setSelectedAgentName(name || getAgent(domain)?.displayName || "Selected Agent");
+    sessionStorage.removeItem("jugaad_selected_agent_domain");
+    sessionStorage.removeItem("jugaad_selected_agent_name");
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
@@ -155,18 +168,31 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     setError(null);
     eventRevealChain.current = Promise.resolve();
 
+    const forcedDomain = selectedAgentDomain;
+    const forcedAgent = forcedDomain ? getAgent(forcedDomain) : null;
+
     setOrchestration({
       query: text,
-      events: [],
+      events: forcedDomain
+        ? [
+            {
+              id: Math.random().toString(36).slice(2, 10),
+              timestamp: Date.now(),
+              agentId: "coordinator",
+              type: "route",
+              message: `One-shot specialist mode: routing only to ${forcedAgent?.displayName ?? forcedDomain}`,
+            },
+          ]
+        : [],
       mergedResponse: null,
-      activeAgents: ["coordinator"],
+      activeAgents: forcedDomain ? ["coordinator", forcedDomain] : ["coordinator"],
       requestId: null,
       running: true,
     });
 
     let assistantText = "";
-    let routedAgents: string[] = [];
-    setMessages((prev) => [...prev, { role: "assistant", content: "", agents: [] }]);
+    let routedAgents: string[] = forcedDomain ? [forcedDomain] : [];
+    setMessages((prev) => [...prev, { role: "assistant", content: "", agents: routedAgents }]);
 
     const queueOrchestrationEvent = (raw: Omit<AgentEvent, "id" | "timestamp">) => {
       eventRevealChain.current = eventRevealChain.current.then(async () => {
@@ -177,10 +203,29 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     };
 
     try {
-      for await (const event of api.streamCoordinator(text, prior, {
-        profile,
-        profileInitialized,
-      })) {
+      const stream = forcedDomain
+        ? api.streamChat(text, prior, { profile, profileInitialized, domain: forcedDomain })
+        : api.streamCoordinator(text, prior, {
+            profile,
+            profileInitialized,
+          });
+
+      for await (const event of stream) {
+        if (typeof event === "string") {
+          assistantText += event;
+          setOrchestration((o) => ({ ...o, mergedResponse: assistantText }));
+          setMessages((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = {
+              role: "assistant",
+              content: assistantText,
+              agents: routedAgents,
+            };
+            return next;
+          });
+          continue;
+        }
+
         if (event.type === "meta") {
           routedAgents = event.agents;
           if (event.missingProfileFields) setMissingFields(event.missingProfileFields);
@@ -217,6 +262,23 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
       }
 
       await eventRevealChain.current;
+      if (forcedDomain) {
+        setOrchestration((o) => ({
+          ...o,
+          events: [
+            ...o.events,
+            {
+              id: Math.random().toString(36).slice(2, 10),
+              timestamp: Date.now(),
+              agentId: "coordinator",
+              type: "merge",
+              message: "One-shot specialist answer complete — future questions return to full multi-agent routing",
+            },
+          ],
+        }));
+        setSelectedAgentDomain(null);
+        setSelectedAgentName(null);
+      }
     } catch {
       setError("Couldn't reach Jugaad. Make sure the backend is running on port 8001.");
       setMessages((prev) => prev.slice(0, -1));
@@ -235,6 +297,7 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
 
   const toggleVoice = async () => {
     if (loading || transcribing) return;
+    stopSpeaking();
     setSpeechError(null);
 
     if (listening) {
@@ -336,6 +399,12 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
             </motion.div>
           ))}
           <div ref={bottomRef} />
+        </div>
+      )}
+
+      {selectedAgentDomain && (
+        <div className="mb-3 rounded-xl border border-[#fdb515]/25 bg-[#fdb515]/10 px-3 py-2 text-xs text-[#fdb515]">
+          Specialist mode: the next answer will use only {selectedAgentName}. After that, Jugaad returns to full multi-agent routing.
         </div>
       )}
 

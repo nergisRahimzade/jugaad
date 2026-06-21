@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { MapPin, ChevronRight } from "lucide-react";
 
@@ -182,7 +183,7 @@ function AgentSidebar({
       <div className="border-b border-white/10 px-4 py-4">
         <p className="text-[10px] font-mono uppercase tracking-widest text-[#fdb515]">UC Berkeley</p>
         <h2 className="mt-1 text-lg font-semibold text-white">Issue Agents</h2>
-        <p className="mt-1 text-xs text-white/40">Click to bring a flashcard to the front</p>
+        <p className="mt-1 text-xs text-white/40">Click an agent to open its specialist chat</p>
       </div>
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
         {agents.map((agent, index) => {
@@ -352,12 +353,12 @@ function CircularFlashcards({
 }
 
 export default function Berkeley3DGlobe() {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [ringRotation, setRingRotation] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const rotationRef = useRef(0);
-  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const snapToIndex = useCallback((index: number) => {
     const target = -index * ANGLE_STEP;
@@ -371,11 +372,16 @@ export default function Berkeley3DGlobe() {
   const selectAgent = useCallback(
     (index: number) => {
       setAutoRotate(false);
-      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
       snapToIndex(index);
-      pauseTimerRef.current = setTimeout(() => setAutoRotate(true), 8000);
+      const selected = campusAgents[index];
+      const domain = campusAgentToDomain(selected.id);
+      if (domain) {
+        sessionStorage.setItem("jugaad_selected_agent_domain", domain);
+        sessionStorage.setItem("jugaad_selected_agent_name", selected.agentName);
+      }
+      router.push("/chat");
     },
-    [snapToIndex]
+    [router, snapToIndex]
   );
 
   useEffect(() => {
@@ -393,12 +399,6 @@ export default function Berkeley3DGlobe() {
 
     return () => clearInterval(id);
   }, [autoRotate]);
-
-  useEffect(() => {
-    return () => {
-      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
-    };
-  }, []);
 
   return (
     <div className="relative flex h-[480px] sm:h-[540px] lg:h-[580px] w-full overflow-hidden rounded-2xl border border-white/10 bg-[#02040a] shadow-2xl shadow-black/40">

@@ -9,6 +9,8 @@ import { useAppState } from "@/context/AppStateContext";
 const NAV = [
   { href: "/", label: "Home" },
   { href: "/chat", label: "Chat" },
+  { href: "/history", label: "History" },
+  { href: "/resources", label: "Resources" },
   { href: "/agents", label: "How It Works" },
 ];
 

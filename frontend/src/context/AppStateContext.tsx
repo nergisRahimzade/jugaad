@@ -18,6 +18,13 @@ export interface ChatMessage {
   agents?: string[];
 }
 
+export interface ChatHistorySession {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: ChatMessage[];
+}
+
 export interface OrchestrationState {
   query: string | null;
   events: AgentEvent[];
@@ -28,6 +35,7 @@ export interface OrchestrationState {
 }
 
 const CHAT_KEY = "jugaad_chat_messages";
+const CHAT_HISTORY_KEY = "jugaad_chat_history";
 const ORCH_KEY = "jugaad_orchestration";
 const PROFILE_KEY = "jugaad_student_profile";
 const PROFILE_INIT_KEY = "jugaad_profile_initialized";
@@ -48,6 +56,16 @@ function loadChat(): ChatMessage[] {
   try {
     const raw = sessionStorage.getItem(CHAT_KEY);
     return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function loadChatHistory(): ChatHistorySession[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    return raw ? (JSON.parse(raw) as ChatHistorySession[]) : [];
   } catch {
     return [];
   }
@@ -94,6 +112,10 @@ function loadUser(): UserSession | null {
 interface AppStateContextValue {
   chatMessages: ChatMessage[];
   setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  chatHistory: ChatHistorySession[];
+  archiveCurrentChat: () => void;
+  startNewChat: () => void;
+  restoreChatSession: (sessionId: string) => void;
   orchestration: OrchestrationState;
   setOrchestration: React.Dispatch<React.SetStateAction<OrchestrationState>>;
   resetOrchestration: () => void;
@@ -111,6 +133,7 @@ const AppStateContext = createContext<AppStateContextValue | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   // SSR-safe defaults — storage is read after mount to avoid hydration mismatches.
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatHistorySession[]>([]);
   const [orchestration, setOrchestration] = useState<OrchestrationState>(DEFAULT_ORCH);
   const [user, setUser] = useState<UserSession | null>(null);
   const [profile, setProfileState] = useState<StudentProfile>(() => ({ ...DEFAULT_PROFILE }));
@@ -119,6 +142,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setChatMessages(loadChat());
+    setChatHistory(loadChatHistory());
     setOrchestration(loadOrchestration());
     setUser(loadUser());
     setProfileState(loadProfile());
@@ -130,6 +154,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     sessionStorage.setItem(CHAT_KEY, JSON.stringify(chatMessages));
   }, [chatMessages, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
+  }, [chatHistory, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -154,6 +183,53 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const resetOrchestration = useCallback(() => {
     setOrchestration(DEFAULT_ORCH);
   }, []);
+
+  const archiveMessages = useCallback((messages: ChatMessage[]) => {
+    if (messages.length === 0) return;
+    const signature = JSON.stringify(messages);
+    const firstUser = messages.find((message) => message.role === "user")?.content.trim();
+    const title = firstUser ? firstUser.slice(0, 72) : "Conversation";
+    const session: ChatHistorySession = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title,
+      updatedAt: Date.now(),
+      messages,
+    };
+    setChatHistory((prev) => {
+      const alreadyArchived = prev.some((item) => JSON.stringify(item.messages) === signature);
+      if (alreadyArchived) return prev;
+      return [session, ...prev].slice(0, 25);
+    });
+  }, []);
+
+  const archiveCurrentChat = useCallback(() => {
+    setChatMessages((current) => {
+      archiveMessages(current);
+      sessionStorage.removeItem(CHAT_KEY);
+      return [];
+    });
+    setOrchestration(DEFAULT_ORCH);
+  }, [archiveMessages]);
+
+  const startNewChat = useCallback(() => {
+    setChatMessages((current) => {
+      archiveMessages(current);
+      sessionStorage.removeItem(CHAT_KEY);
+      return [];
+    });
+    setOrchestration(DEFAULT_ORCH);
+  }, [archiveMessages]);
+
+  const restoreChatSession = useCallback(
+    (sessionId: string) => {
+      const session = chatHistory.find((item) => item.id === sessionId);
+      if (!session) return;
+      setChatMessages(session.messages);
+      sessionStorage.setItem(CHAT_KEY, JSON.stringify(session.messages));
+      setOrchestration(DEFAULT_ORCH);
+    },
+    [chatHistory]
+  );
 
   const setProfile = useCallback((next: StudentProfile) => {
     setProfileState(next);
@@ -185,6 +261,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       value={{
         chatMessages,
         setChatMessages,
+        chatHistory,
+        archiveCurrentChat,
+        startNewChat,
+        restoreChatSession,
         orchestration,
         setOrchestration,
         resetOrchestration,
