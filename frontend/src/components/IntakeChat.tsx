@@ -14,15 +14,6 @@ interface IntakeChatProps {
   onComplete: (profile: StudentProfile) => void;
 }
 
-const DOMAIN_COLORS: Record<string, string> = {
-  food: "#34D399",
-  housing: "#60A5FA",
-  financial_aid: "#A78BFA",
-  safety: "#F87171",
-  wellness: "#E879F9",
-  academic: "#38BDF8",
-};
-
 function TypingIndicator() {
   return (
     <div className="flex items-end gap-3 mb-4">
@@ -67,7 +58,7 @@ function ProfileSummary({ profile }: { profile: StudentProfile }) {
       className="glass rounded-2xl p-5 mt-4 border border-white/10"
     >
       <p className="text-xs text-white/40 uppercase tracking-widest mb-3 font-mono">
-        Here's what I found
+        Here&apos;s what I found
       </p>
       <div className="grid grid-cols-2 gap-2">
         {fields.map(({ label, value }) => (

@@ -381,7 +381,7 @@ function DeadlineAlerts({
 }: {
   profile: StudentProfile;
 }) {
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<{ hack_id: string; hack_name: string; urgency: string; days_until: number; dollar_value?: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
