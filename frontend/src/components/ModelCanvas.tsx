@@ -13,28 +13,26 @@ const AGENT_NODES = [
   { speed: 0.45, radius: 2.0, yAmplitude: 0.4, color: "#38bdf8", phase: 5.03 },
 ];
 
-function Particles({ count = 80 }) {
+function Particles({ count = 60 }) {
   const ref = useRef<THREE.Points>(null);
 
-  const [positions, sizes] = useMemo(() => {
+  const positions = useMemo(() => {
     const pos = new Float32Array(count * 3);
-    const sz = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      const r = 4 + Math.random() * 3;
+      const r = 4.5 + Math.random() * 2.5;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       pos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
       pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       pos[i * 3 + 2] = r * Math.cos(phi);
-      sz[i] = Math.random() * 0.04 + 0.01;
     }
-    return [pos, sz];
+    return pos;
   }, [count]);
 
   useFrame((state) => {
     if (ref.current) {
-      ref.current.rotation.y = state.clock.elapsedTime * 0.04;
-      ref.current.rotation.x = state.clock.elapsedTime * 0.015;
+      ref.current.rotation.y = state.clock.elapsedTime * 0.035;
+      ref.current.rotation.x = state.clock.elapsedTime * 0.012;
     }
   });
 
@@ -42,85 +40,45 @@ function Particles({ count = 80 }) {
     <points ref={ref}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-        <bufferAttribute attach="attributes-size" args={[sizes, 1]} />
       </bufferGeometry>
       <pointsMaterial
         color="#fdb515"
-        size={0.03}
+        size={0.025}
         sizeAttenuation
         transparent
-        opacity={0.5}
+        opacity={0.35}
         depthWrite={false}
       />
     </points>
   );
 }
 
-function AgentNode({
-  speed, radius, yAmplitude, color, phase,
-}: (typeof AGENT_NODES)[0]) {
+function AgentNode({ speed, radius, yAmplitude, color, phase }: (typeof AGENT_NODES)[0]) {
   const ref = useRef<THREE.Mesh>(null);
-  const lineRef = useRef<{ setPoints: (pts: THREE.Vector3[]) => void }>(null);
-  const pos = useRef(new THREE.Vector3());
 
   useFrame((state) => {
     const t = state.clock.elapsedTime * speed + phase;
     const x = Math.cos(t) * radius;
     const y = Math.sin(t * 0.7) * yAmplitude;
     const z = Math.sin(t) * radius;
-    pos.current.set(x, y, z);
     if (ref.current) {
       ref.current.position.set(x, y, z);
-      const s = 1 + Math.sin(t * 2) * 0.08;
+      const s = 1 + Math.sin(t * 2) * 0.07;
       ref.current.scale.setScalar(s);
     }
   });
 
   return (
-    <>
-      <mesh ref={ref}>
-        <sphereGeometry args={[0.1, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={1.2}
-          roughness={0}
-          metalness={0.2}
-        />
-      </mesh>
-    </>
-  );
-}
-
-function ConnectionLines() {
-  const lines = useMemo(() =>
-    AGENT_NODES.map(({ color }) => {
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(6), 3));
-      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.22, depthWrite: false });
-      return new THREE.Line(geo, mat);
-    }), []
-  );
-
-  useFrame((state) => {
-    AGENT_NODES.forEach(({ speed, radius, yAmplitude, phase }, i) => {
-      const t = state.clock.elapsedTime * speed + phase;
-      const x = Math.cos(t) * radius;
-      const y = Math.sin(t * 0.7) * yAmplitude;
-      const z = Math.sin(t) * radius;
-      const positions = lines[i].geometry.attributes.position as THREE.BufferAttribute;
-      positions.setXYZ(0, 0, 0, 0);
-      positions.setXYZ(1, x, y, z);
-      positions.needsUpdate = true;
-    });
-  });
-
-  return (
-    <>
-      {lines.map((line, i) => (
-        <primitive key={i} object={line} />
-      ))}
-    </>
+    <mesh ref={ref}>
+      <sphereGeometry args={[0.09, 16, 16]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={1.0}
+        roughness={0.1}
+        metalness={0.1}
+      />
+    </mesh>
   );
 }
 
@@ -141,49 +99,42 @@ function JugaadCore() {
           <MeshDistortMaterial
             color="#03173d"
             emissive="#fdb515"
-            emissiveIntensity={0.2}
+            emissiveIntensity={0.22}
             roughness={0.1}
             metalness={0.9}
-            distort={0.25}
+            distort={0.22}
             speed={1.5}
           />
         </Sphere>
       </Float>
 
-      {/* Inner ring */}
+      {/* Inner gold ring */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.55, 0.008, 16, 120]} />
+        <torusGeometry args={[1.55, 0.007, 16, 120]} />
         <meshStandardMaterial
           color="#fdb515"
           emissive="#fdb515"
-          emissiveIntensity={0.8}
+          emissiveIntensity={0.9}
           transparent
-          opacity={0.6}
+          opacity={0.55}
         />
       </mesh>
 
-      {/* Outer rings */}
+      {/* Tilted accent rings */}
       {[
-        { r: 2.0, rot: [Math.PI / 2.4, 0.3, 0.1] as [number,number,number], color: "#60a5fa", emissive: false },
-        { r: 2.5, rot: [Math.PI / 3, 0.8, 0.5] as [number,number,number], color: "#a78bfa", emissive: false },
+        { r: 2.0, rot: [Math.PI / 2.4, 0.3, 0.1] as [number, number, number], color: "#60a5fa" },
+        { r: 2.5, rot: [Math.PI / 3,   0.8, 0.5] as [number, number, number], color: "#a78bfa" },
       ].map(({ r, rot, color }, i) => (
         <mesh key={i} rotation={rot}>
-          <torusGeometry args={[r, 0.006, 16, 120]} />
-          <meshStandardMaterial
-            color={color}
-            transparent
-            opacity={0.2}
-          />
+          <torusGeometry args={[r, 0.005, 16, 120]} />
+          <meshStandardMaterial color={color} transparent opacity={0.18} />
         </mesh>
       ))}
 
-      {/* Orbiting agent nodes */}
+      {/* Orbiting nodes */}
       {AGENT_NODES.map((node, i) => (
         <AgentNode key={i} {...node} />
       ))}
-
-      {/* Connection lines from center to nodes */}
-      <ConnectionLines />
     </group>
   );
 }
