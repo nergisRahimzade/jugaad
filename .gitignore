@@ -34,3 +34,7 @@ npm-debug.log*
 
 # Hackathon planning docs (local only)
 gitignorethis/
+
+# Installed agent skills
+.agents/
+skills-lock.json

@@ -131,7 +131,8 @@ APPLY_NOW_DISPATCH = {
     "emergency_grant": emergency_grant_statement,
     "government_benefit": calfresh_eligibility_summary,
     "scholarship": scholarship_paragraph,
-    "financial_appeal": fafsa_housing_appeal,
+    "fafsa_housing_appeal": fafsa_housing_appeal,
+    "special_circumstances_appeal": special_circumstances_appeal,
     "federal_grant": calfresh_eligibility_summary,
     "fee_deferral": action_steps,
     "food_pantry": action_steps,
@@ -141,5 +142,6 @@ APPLY_NOW_DISPATCH = {
     "rapid_rehousing": action_steps,
     "cooperative": action_steps,
     "counseling": action_steps,
+    "safety": action_steps,
     "employment": action_steps,
 }

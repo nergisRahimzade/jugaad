@@ -122,6 +122,17 @@ export const api = {
   ): Promise<{ checklist: string; profile: StudentProfile }> =>
     post("/checklist", { profile }),
 
+  deadlines: (
+    profile: StudentProfile,
+    email?: string
+  ): Promise<{
+    alerts: { hack_id: string; hack_name: string; domain: string; deadline: string; days_until: number | null; urgency: string; dollar_value: string | null; url: string | null; effort_level: string }[];
+    grouped: Record<string, unknown[]>;
+    total: number;
+    urgent_count: number;
+    email_sent: boolean;
+  }> => post("/deadlines", { profile, email }),
+
   demoMaria: (): Promise<{ profile: StudentProfile; persona: string }> =>
     get("/demo/maria"),
 

@@ -2,101 +2,115 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/GeistVF.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GeistMono";
+  src: url("/fonts/GeistMonoVF.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
-  --background: #050810;
-  --foreground: #f0f4ff;
-  --berkeley-blue: #003262;
+  --background: #0c0b14;
+  --foreground: #ece9f8;
   --berkeley-gold: #fdb515;
-  --surface: #0c1220;
-  --surface-elevated: #121a2e;
+  --surface: #13111f;
+  --surface-elevated: #1a1830;
   --border: rgba(255, 255, 255, 0.08);
-  --muted: #8892a8;
+  --muted: #8b92aa;
+  --radius: 14px;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html {
-  scroll-behavior: smooth;
-}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Geist", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
-.font-serif {
-  font-family: Georgia, "Times New Roman", serif;
-}
-
-.font-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-}
+.font-serif { font-family: Georgia, "Times New Roman", serif; }
+.font-mono  { font-family: "GeistMono", ui-monospace, Menlo, monospace; }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+
+  /* Frosted glass panel — warmer, less "terminal" */
+  .glass {
+    background: rgba(19, 17, 31, 0.72);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
-  .glass {
-    background: rgba(12, 18, 32, 0.72);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--border);
+  /* Softer card without backdrop blur (cheaper, for nested items) */
+  .card {
+    background: rgba(19, 17, 31, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius);
   }
 
   .glow-gold {
-    box-shadow: 0 0 60px rgba(253, 181, 21, 0.15), 0 0 120px rgba(253, 181, 21, 0.05);
+    box-shadow:
+      0 0 40px rgba(253, 181, 21, 0.1),
+      0 0 100px rgba(253, 181, 21, 0.04),
+      inset 0 1px 0 rgba(253, 181, 21, 0.05);
   }
 
+  /* Rich gradient: gold → amber → soft violet */
   .gradient-text {
-    background: linear-gradient(135deg, #fdb515 0%, #ffe082 40%, #60a5fa 100%);
+    background: linear-gradient(120deg, #fdb515 0%, #ffca3a 45%, #b48fff 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
+  /* Very subtle dot grid (less grid, more texture) */
   .grid-bg {
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
+    background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 
   .noise {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
   }
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
 
-@keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 0.4; }
-  100% { transform: scale(0.95); opacity: 0.8; }
-}
-
+/* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(0.96); opacity: 0.7; }
+  50%       { transform: scale(1.04); opacity: 0.35; }
+}
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
+.animate-float       { animation: float 6s ease-in-out infinite; }
+.animate-pulse-ring  { animation: pulse-ring 3s ease-in-out infinite; }
 
-.animate-pulse-ring {
-  animation: pulse-ring 3s ease-in-out infinite;
+/* Gold button glow on hover */
+a[style*="fdb515"]:hover,
+button[style*="fdb515"]:hover {
+  box-shadow: 0 0 0 3px rgba(253,181,21,0.2), 0 4px 20px rgba(253,181,21,0.3);
 }

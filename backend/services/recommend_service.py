@@ -122,12 +122,14 @@ Return ONLY the JSON. No explanation."""
 
     # Parse Claude's selection
     try:
-        # Strip markdown code blocks if present
+        # Strip any markdown code fences (```json, ```, etc.)
         clean = response.strip()
-        if clean.startswith("```"):
-            clean = clean.split("```")[1]
-            if clean.startswith("json"):
-                clean = clean[4:]
+        if "```" in clean:
+            parts = clean.split("```")
+            block = parts[1]
+            if block.startswith("json"):
+                block = block[4:]
+            clean = block.strip()
         parsed = json.loads(clean)
     except Exception:
         # Fallback: use top 3 candidate hacks as-is

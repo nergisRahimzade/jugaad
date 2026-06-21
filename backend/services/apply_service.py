@@ -8,8 +8,8 @@ from core.arize_logger import logged_complete
 # Map hack IDs to their "subcategory" for dispatch
 HACK_SUBCATEGORY_MAP = {
     "emergency-grant": "emergency_grant",
-    "fafsa-housing-appeal": "financial_appeal",
-    "special-circumstances-appeal": "financial_appeal",
+    "fafsa-housing-appeal": "fafsa_housing_appeal",
+    "special-circumstances-appeal": "special_circumstances_appeal",
     "calfresh-student-exemption": "government_benefit",
     "calfresh-state-supplement": "government_benefit",
     "dream-act-financial-aid": "scholarship",
@@ -34,7 +34,8 @@ HACK_SUBCATEGORY_MAP = {
 
 CONTENT_TYPE_MAP = {
     "emergency_grant": "personal_statement",
-    "financial_appeal": "appeal_letter",
+    "fafsa_housing_appeal": "appeal_letter",
+    "special_circumstances_appeal": "appeal_letter",
     "government_benefit": "eligibility_summary",
     "federal_grant": "eligibility_summary",
     "scholarship": "scholarship_paragraph",
@@ -77,8 +78,12 @@ def generate_apply_now(profile: StudentProfile, hack_id: str) -> ApplyNowRespons
                          "counseling", "safety", "fee_deferral"):
         user_prompt = prompt_fn(profile_context, hack.name, hack.description, hack.how_to_access)
         max_tokens = 400
-    else:
+    elif subcategory in ("fafsa_housing_appeal", "special_circumstances_appeal"):
         user_prompt = prompt_fn(profile_context)
+        max_tokens = 400
+    else:
+        # Fallback: assume action_steps signature
+        user_prompt = prompt_fn(profile_context, hack.name, hack.description, hack.how_to_access)
         max_tokens = 400
 
     system = build_system_prompt(profile_context)
