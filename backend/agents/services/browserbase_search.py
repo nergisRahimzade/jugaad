@@ -1,63 +1,49 @@
-"""Live Berkeley resource lookup via Browserbase — falls back to static URLs."""
+"""Legacy facade that routes ``response_builder`` to the new finder agents.
+
+Only three domains are wired up — food, housing, financial_aid (which absorbs
+scholarship requests). For anything else we return ``None`` so the response
+builder falls back to the static ``DOMAIN_KNOWLEDGE`` block.
+"""
 
 from __future__ import annotations
 
-import os
-from typing import Any
+from core.config import settings
 
-BROWSERBASE_API_KEY = os.getenv("BROWSERBASE_API_KEY", "")
+from .browserbase import (
+    find_financial_aid_resources,
+    find_food_resources,
+    find_housing_resources,
+)
 
-DOMAIN_SITES: dict[str, list[str]] = {
-    "food": [
-        "https://basicneeds.berkeley.edu/pantry",
-        "https://basicneeds.berkeley.edu/faq/calfresh",
-    ],
-    "housing": [
-        "https://basicneeds.berkeley.edu",
-        "https://bsc.coop",
-    ],
-    "financial_aid": [
-        "https://financialaid.berkeley.edu",
-        "https://financialaid.berkeley.edu/apply-now/apply-for-aid/federal-updates/",
-    ],
-    "scholarship": [
-        "https://financialaid.berkeley.edu",
-    ],
-    "wellness": [
-        "https://uhs.berkeley.edu/counseling",
-    ],
-    "safety": [
-        "https://ucpd.berkeley.edu",
-    ],
-    "academic": [
-        "https://berkeleytime.com",
-        "https://classes.berkeley.edu",
-    ],
+_DOMAIN_FINDERS = {
+    "food": find_food_resources,
+    "housing": find_housing_resources,
+    "financial_aid": find_financial_aid_resources,
+    "scholarship": find_financial_aid_resources,  # merged
 }
 
 
 def fetch_live_resources(domain: str, query: str) -> list[dict[str, str]] | None:
-    """
-    Return live resources when Browserbase is configured.
-    Person 3 can swap in real Stagehand/Browserbase crawl here.
-    """
-    if not BROWSERBASE_API_KEY:
+    """Run the matching finder and shape its output for the dashboard cards."""
+    _ = query  # the finders pull from a curated URL set; the query just routes here
+    if not settings.browserbase_api_key:
         return None
-
-    try:
-        import httpx
-
-        # Placeholder: Person 3 wires real Browserbase session crawl.
-        # For now, mark URLs as live-checked when API key is present.
-        sites = DOMAIN_SITES.get(domain, [])
-        return [
-            {
-                "name": f"Live Berkeley resource ({domain})",
-                "url": url,
-                "value": "Live via Browserbase",
-                "effort": "Verified during query",
-            }
-            for url in sites[:2]
-        ]
-    except Exception:
+    finder = _DOMAIN_FINDERS.get(domain)
+    if finder is None:
         return None
+    payload = finder()
+    resources = payload.get("resources") or []
+    if not resources:
+        return None
+    return [
+        {
+            "name": r.get("name") or "Live Berkeley resource",
+            "url": r.get("url") or "",
+            "value": r.get("dollar_value") or "",
+            "effort": r.get("effort_level") or "",
+            "deadline": r.get("deadline") or "",
+            "notes": r.get("description") or r.get("eligibility") or "",
+            "source": "browserbase",
+        }
+        for r in resources
+    ]

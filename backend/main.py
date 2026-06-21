@@ -1,11 +1,32 @@
 from core.instrumentation import setup as _setup_arize
+
 _setup_arize()
+
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from agents.services import redis_cache, redis_memory
+from agents.services.redis_seed import seed_if_needed
+from agents.services.redis_store import index_stats
 from core.config import settings
-from routers import intake, recommend, apply_now, chat, calfresh, checklist, demo, deadlines, speech, evaluate
+from routers import (
+    apply_now,
+    calfresh,
+    chat,
+    checklist,
+    contribute,
+    deadlines,
+    demo,
+    evaluate,
+    intake,
+    recommend,
+    speech,
+    web_search,
+)
+
+logger = logging.getLogger("jugaad.main")
 
 app = FastAPI(title="Jugaad API", version="1.0.0")
 
@@ -33,13 +54,34 @@ app.include_router(demo.router, prefix="/demo", tags=["demo"])
 app.include_router(deadlines.router, tags=["deadlines"])
 app.include_router(speech.router, prefix="/speech", tags=["speech"])
 app.include_router(evaluate.router, tags=["evaluate"])
+app.include_router(contribute.router, tags=["data"])
+app.include_router(web_search.router, tags=["data"])
+
+
+@app.on_event("startup")
+def _startup_seed() -> None:
+    """Idempotent RedisVL seed on every boot — only writes when index is empty."""
+    try:
+        result = seed_if_needed()
+        logger.info("Redis seed result: %s", result)
+    except Exception as exc:
+        logger.warning("Redis seed at startup failed: %s", exc)
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "model": settings.model_name}
+    return {
+        "status": "ok",
+        "model": settings.model_name,
+        "data_layer": {
+            "redis_vector_index": index_stats(),
+            "langcache": redis_cache.stats(),
+            "agent_memory": redis_memory.stats(),
+        },
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
