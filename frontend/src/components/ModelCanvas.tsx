@@ -44,8 +44,8 @@ function CoreOrb() {
           vec3 viewDir = normalize(cameraPosition - vWorldPos);
           float fresnel = pow(1.0 - clamp(dot(vNormal, viewDir), 0.0, 1.0), 2.2);
           float pulse = 0.5 + 0.5 * sin(uTime * 0.7);
-          vec3 base = mix(uColor2, uColor1 * 0.55, fresnel * 0.65 + pulse * 0.12);
-          vec3 rim  = uColor1 * pow(fresnel, 1.4) * 1.4;
+          vec3 base = mix(uColor2, uColor1 * 0.35, fresnel * 0.5 + pulse * 0.08);
+          vec3 rim  = uColor1 * pow(fresnel, 2.0) * 0.7;
           gl_FragColor = vec4(base + rim, 1.0);
         }
       `,
@@ -136,7 +136,7 @@ function Node({ speed, r, yAmp, color, phase, size }: (typeof NODES)[0]) {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[size, 16, 16]} />
-      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.5} roughness={0} metalness={0} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} roughness={0} metalness={0} />
     </mesh>
   );
 }
@@ -206,10 +206,10 @@ function Scene() {
     <>
       {/* Lighting */}
       <ambientLight intensity={0.15} />
-      <pointLight position={[5, 5, 5]}    intensity={3}   color="#fdb515" />
-      <pointLight position={[-6, -3, -6]} intensity={1.2} color="#60a5fa" />
-      <pointLight position={[0, 7, 2]}    intensity={0.6} color="#a78bfa" />
-      <pointLight position={[3, -5, 4]}   intensity={0.4} color="#34d399" />
+      <pointLight position={[5, 5, 5]}    intensity={1.4} color="#fdb515" />
+      <pointLight position={[-6, -3, -6]} intensity={0.7} color="#60a5fa" />
+      <pointLight position={[0, 7, 2]}    intensity={0.4} color="#a78bfa" />
+      <pointLight position={[3, -5, 4]}   intensity={0.25} color="#34d399" />
 
       <Particles />
 
@@ -222,9 +222,9 @@ function Scene() {
       {/* Bloom + subtle chromatic aberration */}
       <EffectComposer>
         <Bloom
-          intensity={0.8}
-          luminanceThreshold={0.4}
-          luminanceSmoothing={0.6}
+          intensity={0.4}
+          luminanceThreshold={0.6}
+          luminanceSmoothing={0.8}
           mipmapBlur
         />
         <ChromaticAberration
