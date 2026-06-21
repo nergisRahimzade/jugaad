@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const ModelCanvas = dynamic(() => import("./ModelCanvas").then((m) => m.ModelCanvas), {
@@ -15,10 +18,10 @@ const ModelCanvas = dynamic(() => import("./ModelCanvas").then((m) => m.ModelCan
 });
 
 const LIVE_STATS = [
-  { label: "Agents", value: "8 live",   color: "text-berkeley-gold" },
-  { label: "Network", value: "testnet", color: "text-emerald-400" },
-  { label: "Protocol", value: "uAgents", color: "text-blue-400" },
-  { label: "Domains", value: "6 active", color: "text-purple-400" },
+  { label: "Agents",   value: "8 live",   color: "text-berkeley-gold" },
+  { label: "Network",  value: "testnet",  color: "text-emerald-400"   },
+  { label: "Protocol", value: "uAgents",  color: "text-blue-400"      },
+  { label: "Domains",  value: "6 active", color: "text-purple-400"    },
 ];
 
 interface Hero3DProps {
@@ -26,6 +29,8 @@ interface Hero3DProps {
 }
 
 export function Hero3D({ className = "" }: Hero3DProps) {
+  const [expanded, setExpanded] = useState(true);
+
   return (
     <div className={`relative ${className}`}>
       {/* Ambient glow */}
@@ -42,24 +47,61 @@ export function Hero3D({ className = "" }: Hero3DProps) {
       >
         <ModelCanvas />
 
-        {/* Top-right live stats panel */}
-        <div
-          className="absolute top-4 right-4 rounded-xl px-4 py-3 space-y-2.5 min-w-[148px]"
-          style={{
-            background: "rgba(5, 8, 16, 0.75)",
-            backdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.06)",
-          }}
-        >
-          <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest pb-0.5 border-b border-white/5">
-            Live
-          </p>
-          {LIVE_STATS.map(({ label, value, color }) => (
-            <div key={label} className="flex items-center justify-between gap-4 text-xs">
-              <span className="text-white/40">{label}</span>
-              <span className={`font-mono font-medium ${color}`}>{value}</span>
+        {/* Top-right collapsible live stats panel */}
+        <div className="absolute top-4 right-4" style={{ minWidth: "156px" }}>
+          {/* Header row — always visible, click to toggle */}
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-all"
+            style={{
+              background: "rgba(5, 8, 16, 0.82)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(253,181,21,0.35)",
+              boxShadow: "0 0 0 1px rgba(253,181,21,0.08), 0 2px 12px rgba(0,0,0,0.4)",
+            }}
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[9px] font-mono text-white/50 uppercase tracking-widest">Live</span>
             </div>
-          ))}
+            {expanded
+              ? <ChevronUp  size={11} className="text-white/30 flex-shrink-0" />
+              : <ChevronDown size={11} className="text-white/30 flex-shrink-0" />
+            }
+          </button>
+
+          {/* Collapsible stats body */}
+          <AnimatePresence initial={false}>
+            {expanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div
+                  className="mt-1 px-3 py-2.5 rounded-xl space-y-2"
+                  style={{
+                    background: "rgba(5, 8, 16, 0.82)",
+                    backdropFilter: "blur(20px)",
+                    border: "1px solid rgba(253,181,21,0.35)",
+                    boxShadow: "0 0 0 1px rgba(253,181,21,0.08), 0 2px 12px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  {LIVE_STATS.map(({ label, value, color }) => (
+                    <div key={label} className="flex items-center justify-between gap-4 text-xs">
+                      <span className="text-white/40">{label}</span>
+                      <span className={`font-mono font-medium ${color}`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Bottom-left pulse indicator */}
