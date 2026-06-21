@@ -1,55 +1,24 @@
 """
-Arize observability wrapper for all Claude API calls.
-Every call is logged with input, output, latency, token count, and a trace name.
-The Arize dashboard shows the full reasoning chain — key demo moment for judges.
+Arize observability wrappers.
+Auto-instrumentation (via AnthropicInstrumentor) captures every Anthropic SDK call.
+These wrappers add named parent spans so each call appears in Arize AX under its
+trace_name (e.g. "intake", "hack_stack_food", "apply_now_grant").
 """
-import time
-from core.config import settings
 import core.claude_client as _claude
 
-_arize_client = None
+try:
+    from opentelemetry import trace as _otel_trace
+    _tracer = _otel_trace.get_tracer("jugaad")
+except Exception:
+    _tracer = None
 
 
-def _get_arize_client():
-    global _arize_client
-    if _arize_client is not None:
-        return _arize_client
-    if not settings.arize_space_key or not settings.arize_api_key:
-        return None
-    try:
-        from arize.api import Client
-        from arize.utils.types import ModelTypes, Environments
-        _arize_client = Client(
-            space_key=settings.arize_space_key,
-            api_key=settings.arize_api_key,
-        )
-    except Exception:
-        pass
-    return _arize_client
-
-
-def _log(trace_name: str, prompt: str, response: str, latency_ms: float, input_tokens: int = 0):
-    client = _get_arize_client()
-    if client is None:
-        return
-    try:
-        from arize.utils.types import ModelTypes, Environments
-        import pandas as pd
-        client.log(
-            prediction_id=f"{trace_name}-{int(time.time() * 1000)}",
-            model_id="jugaad-claude",
-            model_type=ModelTypes.GENERATIVE_LLM,
-            environment=Environments.PRODUCTION,
-            prediction_label=response[:500],
-            features={
-                "trace_name": trace_name,
-                "prompt_preview": prompt[:200],
-                "latency_ms": latency_ms,
-                "model": settings.model_name,
-            },
-        )
-    except Exception:
-        pass  # Never let Arize failures break the app
+def _span(name: str):
+    """Return a context manager span, or a no-op if OTel isn't available."""
+    if _tracer:
+        return _tracer.start_as_current_span(name)
+    from contextlib import nullcontext
+    return nullcontext()
 
 
 def logged_complete(
@@ -58,12 +27,8 @@ def logged_complete(
     max_tokens: int | None,
     trace_name: str,
 ) -> str:
-    start = time.time()
-    response = _claude.complete(system=system, messages=messages, max_tokens=max_tokens)
-    latency_ms = (time.time() - start) * 1000
-    prompt_preview = messages[-1].get("content", "") if messages else ""
-    _log(trace_name, str(prompt_preview), response, latency_ms)
-    return response
+    with _span(trace_name):
+        return _claude.complete(system=system, messages=messages, max_tokens=max_tokens)
 
 
 async def logged_stream(
@@ -72,12 +37,7 @@ async def logged_stream(
     max_tokens: int | None,
     trace_name: str,
 ):
-    """Async generator that streams Claude output and logs the completed response to Arize."""
-    start = time.time()
-    full_response = []
-    async for chunk in _claude.stream(system=system, messages=messages, max_tokens=max_tokens):
-        full_response.append(chunk)
-        yield chunk
-    latency_ms = (time.time() - start) * 1000
-    prompt_preview = messages[-1].get("content", "") if messages else ""
-    _log(trace_name, str(prompt_preview), "".join(full_response), latency_ms)
+    """Async generator that streams Claude output inside a named OTel span."""
+    with _span(trace_name):
+        async for chunk in _claude.stream(system=system, messages=messages, max_tokens=max_tokens):
+            yield chunk

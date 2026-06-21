@@ -1,8 +1,11 @@
+from core.instrumentation import setup as _setup_arize
+_setup_arize()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from routers import intake, recommend, apply_now, chat, calfresh, checklist, demo
+from routers import intake, recommend, apply_now, chat, calfresh, checklist, demo, deadlines
 
 app = FastAPI(title="Jugaad API", version="1.0.0")
 
@@ -21,6 +24,7 @@ app.include_router(chat.router, tags=["chat"])
 app.include_router(calfresh.router, tags=["calfresh"])
 app.include_router(checklist.router, tags=["checklist"])
 app.include_router(demo.router, prefix="/demo", tags=["demo"])
+app.include_router(deadlines.router, tags=["deadlines"])
 
 
 @app.get("/health")
