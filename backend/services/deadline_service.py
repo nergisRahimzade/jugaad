@@ -18,8 +18,11 @@ URGENCY_ROLLING = "rolling"
 
 
 def _days_until(deadline_str: str) -> int | None:
-    """Return days until deadline, or None if unparseable."""
+    """Return days until deadline, or None if unparseable/rolling."""
     if not deadline_str or deadline_str.lower() in ("rolling", "ongoing", "daily", "weekly"):
+        return None
+    # Handle "weekly (Saturdays)" etc
+    if deadline_str.lower().startswith("weekly"):
         return None
     try:
         # Try ISO date format first
