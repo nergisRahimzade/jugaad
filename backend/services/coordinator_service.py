@@ -1,5 +1,7 @@
 """Coordinator routing + merged system prompt for direct student queries."""
 
+from dataclasses import asdict, dataclass
+import re
 from uuid import uuid4
 
 from prompts.domains.academic import ACADEMIC_DOMAIN
@@ -43,6 +45,27 @@ DOMAIN_PRIORITY = [
     "academic",
 ]
 
+AVAILABLE_AGENTS = set(DOMAIN_PRIORITY)
+MAX_ACTIVATED_AGENTS = 3
+CONFIDENCE_THRESHOLD_FOR_CROSS_DOMAIN = 0.72
+FILLER_PATTERN = re.compile(
+    r"\b(?:um+|uh+|erm+|like|you know|sort of|kind of|basically|actually)\b",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class RoutingDecision:
+    primary_domain: str | None
+    activated_agents: list[str]
+    confidence_score: float
+    urgency_level: str
+    matched_domains: list[str]
+    context_switch: bool = False
+
+    def to_json_dict(self) -> dict:
+        return asdict(self)
+
 DOMAIN_PROMPTS: dict[str, str] = {
     "food": FOOD_DOMAIN,
     "housing": HOUSING_DOMAIN,
@@ -78,8 +101,54 @@ GENERAL_PHRASES = [
 ]
 
 
-def route_domains(message: str) -> list[str]:
-    text = message.lower().strip()
+def normalize_student_input(message: str) -> str:
+    """Remove common STT filler words before routing/search without changing meaning."""
+    cleaned = FILLER_PATTERN.sub(" ", message)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _urgency_level(text: str, matched: list[str]) -> str:
+    urgent_terms = [
+        "tonight",
+        "today",
+        "now",
+        "emergency",
+        "evict",
+        "homeless",
+        "starving",
+        "unsafe",
+        "suicid",
+        "self-harm",
+        "hurt myself",
+    ]
+    if any(term in text for term in urgent_terms):
+        return "high"
+    if {"food", "housing", "safety", "wellness"} & set(matched):
+        return "medium"
+    return "low"
+
+
+def _confidence_score(text: str, matched: list[str]) -> float:
+    if not matched:
+        return 0.0
+    hits = 0
+    for domain in matched:
+        hits += sum(1 for keyword in DOMAIN_KEYWORDS[domain] if keyword in text)
+    return min(0.99, 0.58 + (hits * 0.1) + (0.08 if len(matched) == 1 else 0.0))
+
+
+def _previous_primary_domain(messages: list[dict]) -> str | None:
+    for item in reversed(messages):
+        if item.get("role") != "user":
+            continue
+        decision = route_decision(str(item.get("content", "")), [])
+        if decision.primary_domain:
+            return decision.primary_domain
+    return None
+
+
+def route_decision(message: str, messages: list[dict] | None = None) -> RoutingDecision:
+    text = normalize_student_input(message).lower()
 
     matched = [
         domain
@@ -87,19 +156,61 @@ def route_domains(message: str) -> list[str]:
         if any(keyword in text for keyword in keywords)
     ]
 
+    previous_domain = _previous_primary_domain(messages or [])
+    primary = next((domain for domain in DOMAIN_PRIORITY if domain in matched), None)
+    confidence = _confidence_score(text, matched)
+    context_switch = bool(previous_domain and primary and previous_domain != primary and confidence >= 0.85)
+    urgency = _urgency_level(text, matched)
+
     if matched:
-        if len(matched) == 1:
-            return matched
         expanded = set(matched)
-        for domain in list(matched):
-            for linked in CROSS_DOMAIN_TRIGGERS.get(domain, []):
-                expanded.add(linked)
-        return [d for d in DOMAIN_PRIORITY if d in expanded]
+        if confidence >= CONFIDENCE_THRESHOLD_FOR_CROSS_DOMAIN:
+            for domain in list(matched):
+                for linked in CROSS_DOMAIN_TRIGGERS.get(domain, []):
+                    expanded.add(linked)
+        activated = [d for d in DOMAIN_PRIORITY if d in expanded and d in AVAILABLE_AGENTS]
+        if primary and primary in activated:
+            activated = [primary, *[d for d in activated if d != primary]]
+        return RoutingDecision(
+            primary_domain=primary,
+            activated_agents=activated[:MAX_ACTIVATED_AGENTS],
+            confidence_score=round(confidence, 2),
+            urgency_level=urgency,
+            matched_domains=matched,
+            context_switch=context_switch,
+        )
 
     if any(phrase in text for phrase in GENERAL_PHRASES):
-        return []
+        return RoutingDecision(
+            primary_domain=None,
+            activated_agents=[],
+            confidence_score=0.95,
+            urgency_level="low",
+            matched_domains=[],
+            context_switch=False,
+        )
 
-    return ["wellness"]
+    return RoutingDecision(
+        primary_domain="wellness",
+        activated_agents=["wellness"],
+        confidence_score=0.45,
+        urgency_level="medium",
+        matched_domains=[],
+        context_switch=False,
+    )
+
+
+def route_domains(message: str) -> list[str]:
+    return route_decision(message).activated_agents
+
+
+def segment_history_for_routing(messages: list[dict], decision: RoutingDecision) -> list[dict]:
+    """Drop stale cross-domain turns when the router detects a confident context switch."""
+    if not decision.context_switch:
+        return messages[-8:]
+    if not messages:
+        return messages
+    return [messages[-1]]
 
 
 def build_coordinator_system(
@@ -174,13 +285,18 @@ def _agent_address(domain: str) -> str:
     return _DEMO_ADDRESSES.get(domain, f"agent1q…{domain[:4]}")
 
 
-def build_orchestration_events(message: str, request_id: str | None = None) -> tuple[str, list[dict]]:
+def build_orchestration_events(
+    message: str,
+    request_id: str | None = None,
+    decision: RoutingDecision | None = None,
+) -> tuple[str, list[dict]]:
     """
     Build agent activity events mirroring Fetch.ai uAgent coordinator flow.
     Returns (request_id, events) for SSE streaming to the frontend.
     """
     request_id = request_id or str(uuid4())[:8]
-    domains = route_domains(message)
+    decision = decision or route_decision(message)
+    domains = decision.activated_agents
     short = message[:55] + ("…" if len(message) > 55 else "")
     events: list[dict] = []
 
@@ -203,11 +319,7 @@ def build_orchestration_events(message: str, request_id: str | None = None) -> t
         )
         return request_id, events
 
-    matched = [
-        domain
-        for domain, keywords in DOMAIN_KEYWORDS.items()
-        if any(keyword in message.lower() for keyword in keywords)
-    ]
+    matched = decision.matched_domains
     cross_added = [d for d in domains if d not in matched]
 
     events.append(
@@ -215,12 +327,27 @@ def build_orchestration_events(message: str, request_id: str | None = None) -> t
             "agentId": "coordinator",
             "type": "route",
             "message": (
-                f"Keyword match: [{', '.join(matched) or 'none'}] → "
-                f"activating {len(domains)} specialists: {', '.join(domains)}"
+                "Structured routing JSON → "
+                f"primary={decision.primary_domain}, agents=[{', '.join(domains)}], "
+                f"confidence={decision.confidence_score}, urgency={decision.urgency_level}"
             ),
-            "meta": {"domains": ", ".join(domains), "requestId": request_id},
+            "meta": {
+                "domains": ", ".join(domains),
+                "requestId": request_id,
+                "routingDecision": str(decision.to_json_dict()),
+            },
         }
     )
+
+    if decision.context_switch:
+        events.append(
+            {
+                "agentId": "coordinator",
+                "type": "info",
+                "message": "Context switch detected — old turns segmented out of the active prompt window",
+                "meta": {"requestId": request_id},
+            }
+        )
 
     if cross_added:
         events.append(

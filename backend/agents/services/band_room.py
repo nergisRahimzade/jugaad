@@ -15,6 +15,8 @@ BAND_ROOM_ID = os.getenv("BAND_ROOM_ID", "")
 BAND_REST_URL = os.getenv("BAND_REST_URL", "https://app.band.ai")
 
 _sessions: dict[str, list[dict[str, Any]]] = {}
+_ran_agents: dict[str, set[str]] = {}
+MIN_PUBLISH_CONFIDENCE = 0.72
 
 CROSS_DOMAIN_INSIGHTS: dict[str, dict[str, Any]] = {
     "financial_aid": {
@@ -42,12 +44,34 @@ CROSS_DOMAIN_INSIGHTS: dict[str, dict[str, Any]] = {
 
 def create_session(session_id: str) -> None:
     _sessions.setdefault(session_id, [])
+    _ran_agents.setdefault(session_id, set())
 
 
-def publish(session_id: str, agent_domain: str, summary: str) -> list[str]:
+def publish(
+    session_id: str,
+    agent_domain: str,
+    summary: str,
+    *,
+    confidence: float = 1.0,
+) -> list[str]:
     """Publish agent insight to Band room; return extra domains to notify."""
+    ran = _ran_agents.setdefault(session_id, set())
+    if agent_domain in ran:
+        logger.info("Band room [%s]: skip duplicate publish from %s", session_id[:8], agent_domain)
+        return []
+    ran.add(agent_domain)
+
+    if confidence < MIN_PUBLISH_CONFIDENCE:
+        logger.info(
+            "Band room [%s]: skip low-confidence publish from %s (%.2f)",
+            session_id[:8],
+            agent_domain,
+            confidence,
+        )
+        return []
+
     meta = CROSS_DOMAIN_INSIGHTS.get(agent_domain, {})
-    triggers = list(meta.get("triggers", []))
+    triggers = [domain for domain in meta.get("triggers", []) if domain not in ran]
     insight = meta.get("insight", f"{agent_domain} agent responded")
 
     event = {
@@ -55,6 +79,7 @@ def publish(session_id: str, agent_domain: str, summary: str) -> list[str]:
         "insight": insight,
         "summary": summary[:200],
         "triggers": triggers,
+        "confidence": confidence,
     }
     _sessions.setdefault(session_id, []).append(event)
     logger.info("Band room [%s]: %s → triggers %s", session_id[:8], insight, triggers)

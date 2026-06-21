@@ -29,6 +29,18 @@ DOMAIN_PRIORITY = [
     "academic",
 ]
 
+MAX_ACTIVATED_AGENTS = 3
+CONFIDENCE_THRESHOLD_FOR_CROSS_DOMAIN = 0.72
+
+
+def _confidence_score(text: str, matched: list[str]) -> float:
+    if not matched:
+        return 0.0
+    hits = 0
+    for domain in matched:
+        hits += sum(1 for keyword in DOMAIN_KEYWORDS[domain] if keyword in text)
+    return min(0.99, 0.58 + (hits * 0.1) + (0.08 if len(matched) == 1 else 0.0))
+
 
 def route_domains(message: str) -> list[str]:
     text = message.lower()
@@ -38,11 +50,12 @@ def route_domains(message: str) -> list[str]:
         if any(keyword in text for keyword in keywords)
     ]
     if not matched:
-        return ["food", "financial_aid"]
+        return ["wellness"]
 
     expanded = set(matched)
-    for domain in list(matched):
-        for linked in CROSS_DOMAIN_TRIGGERS.get(domain, []):
-            expanded.add(linked)
+    if _confidence_score(text, matched) >= CONFIDENCE_THRESHOLD_FOR_CROSS_DOMAIN:
+        for domain in list(matched):
+            for linked in CROSS_DOMAIN_TRIGGERS.get(domain, []):
+                expanded.add(linked)
 
-    return [d for d in DOMAIN_PRIORITY if d in expanded]
+    return [d for d in DOMAIN_PRIORITY if d in expanded][:MAX_ACTIVATED_AGENTS]

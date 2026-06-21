@@ -13,7 +13,9 @@ from prompts.domains.academic import ACADEMIC_DOMAIN
 from prompts.domains.wellness import WELLNESS_DOMAIN
 from core.arize_logger import logged_stream
 from services.coordinator_service import (
-    route_domains,
+    route_decision,
+    normalize_student_input,
+    segment_history_for_routing,
     build_coordinator_system,
     build_orchestration_events,
 )
@@ -54,10 +56,13 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat/coordinator")
 async def coordinator_chat(request: CoordinatorRequest):
-    domains = route_domains(request.message)
+    cleaned_message = normalize_student_input(request.message)
+    decision = route_decision(cleaned_message, request.messages)
+    domains = decision.activated_agents
     profile = request.profile
     history = list(request.messages)
-    history.append({"role": "user", "content": request.message})
+    history.append({"role": "user", "content": cleaned_message})
+    prompt_history = segment_history_for_routing(history, decision)
 
     profile_patch = None
     if profile:
@@ -71,7 +76,7 @@ async def coordinator_chat(request: CoordinatorRequest):
     analysis = analyze_profile(profile, domains, request.profile_initialized)
     profile_addendum = build_profile_addendum(analysis, domains)
     system = build_coordinator_system(domains, analysis.context, profile_addendum)
-    request_id, orchestration_events = build_orchestration_events(request.message)
+    request_id, orchestration_events = build_orchestration_events(cleaned_message, decision=decision)
 
     async def event_stream():
         meta = {
@@ -80,6 +85,7 @@ async def coordinator_chat(request: CoordinatorRequest):
             "requestId": request_id,
             "missingProfileFields": analysis.missing_fields,
             "profileCompleteness": analysis.completeness,
+            "routingDecision": decision.to_json_dict(),
         }
         if profile_patch:
             meta["profilePatch"] = profile_patch
@@ -88,7 +94,7 @@ async def coordinator_chat(request: CoordinatorRequest):
             yield f'data: {json.dumps({"type": "agent_event", "event": event})}\n\n'
         async for chunk in logged_stream(
             system=system,
-            messages=history,
+            messages=prompt_history,
             max_tokens=None,
             trace_name="coordinator",
         ):
@@ -104,7 +110,8 @@ async def chat(request: ChatRequest):
     domains = [request.domain] if request.domain else []
     profile = request.profile
     history = list(request.messages)
-    history.append({"role": "user", "content": request.message})
+    cleaned_message = normalize_student_input(request.message)
+    history.append({"role": "user", "content": cleaned_message})
 
     profile_patch = None
     if profile and domains:
@@ -137,7 +144,7 @@ async def chat(request: ChatRequest):
             yield f"data: {json.dumps(meta)}\n\n"
         async for chunk in logged_stream(
             system=system,
-            messages=history,
+            messages=history[-8:],
             max_tokens=None,
             trace_name=trace_name,
         ):
