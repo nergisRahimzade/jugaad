@@ -14,6 +14,8 @@ from uagents_core.contrib.protocols.chat import (
 
 from messages import format_response, parse_query
 
+agent = Agent()
+
 DOMAIN = "financial_aid"
 SUMMARY = "Appeals, emergency loans, fee plans, and Basic Needs fund when aid is insufficient."
 RECOMMENDATIONS = [
@@ -70,6 +72,11 @@ async def handle_chat(ctx: Context, sender: str, msg: ChatMessage) -> None:
             ],
         ),
     )
+
+
+@chat_protocol.on_message(ChatAcknowledgement)
+async def handle_ack(ctx: Context, sender: str, msg: ChatAcknowledgement) -> None:
+    pass
 
 
 agent.include(chat_protocol, publish_manifest=True)
