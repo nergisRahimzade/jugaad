@@ -3,10 +3,11 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Mic, MicOff, Send } from "lucide-react";
 import { api } from "@/lib/api";
 import { getAgent } from "@/lib/agents";
 import { useAppState } from "@/context/AppStateContext";
+import { useSpeechToText } from "@/lib/useSpeechToText";
 import type { AgentDomain, AgentEvent } from "@/lib/types";
 
 const EVENT_STAGGER_MS = 160;
@@ -114,6 +115,16 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
   const initialSent = useRef(false);
   const eventRevealChain = useRef(Promise.resolve());
 
+  const {
+    listening,
+    transcribing,
+    error: speechError,
+    toggleListening,
+    setError: setSpeechError,
+  } = useSpeechToText();
+
+  const voiceBusy = listening || transcribing;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -207,6 +218,22 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     sendMessage();
   }
 
+  const toggleVoice = async () => {
+    if (loading || transcribing) return;
+    setSpeechError(null);
+
+    if (listening) {
+      const text = await toggleListening();
+      if (text.trim()) {
+        setInput(text);
+        void sendMessage(text);
+      }
+      return;
+    }
+
+    await toggleListening();
+  };
+
   useEffect(() => {
     if (initialSent.current || !initialMessage?.trim()) return;
     initialSent.current = true;
@@ -286,7 +313,9 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
         </div>
       )}
 
-      {error && <p className="text-red-400/80 text-xs text-center mb-3">{error}</p>}
+      {(error || speechError) && (
+        <p className="text-red-400/80 text-xs text-center mb-3">{error ?? speechError}</p>
+      )}
 
       {!user && messages.length === 0 && (
         <p className="text-center text-xs text-white/35 mb-3">
@@ -318,6 +347,25 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
             border: "1px solid rgba(255,255,255,0.08)",
           }}
         >
+          <button
+            type="button"
+            onClick={toggleVoice}
+            disabled={loading || voiceBusy && !listening}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all disabled:opacity-25 ${
+              listening
+                ? "bg-red-500/20 border border-red-400/50 text-red-400"
+                : "border border-white/10 text-white/70 hover:text-white hover:bg-white/5"
+            }`}
+            aria-label={listening ? "Stop recording and send" : transcribing ? "Transcribing" : "Start voice message"}
+          >
+            {listening ? (
+              <MicOff className="h-4 w-4" />
+            ) : transcribing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Mic className="h-4 w-4" />
+            )}
+          </button>
           <textarea
             ref={inputRef}
             value={input}
@@ -329,13 +377,21 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
               }
             }}
             rows={1}
-            placeholder={loading ? "Jugaad is thinking…" : "Describe what you need..."}
-            disabled={loading}
+            placeholder={
+              listening
+                ? "Listening… tap the red mic when done"
+                : transcribing
+                  ? "Transcribing…"
+                  : loading
+                    ? "Jugaad is thinking…"
+                    : "Describe what you need, or tap the mic…"
+            }
+            disabled={loading || voiceBusy}
             className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm sm:text-base text-white placeholder-white/35 outline-none min-h-[44px] max-h-32 disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || voiceBusy}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all disabled:opacity-25 hover:opacity-90"
             style={{ background: "#003262", color: "#fdb515" }}
             aria-label="Send"

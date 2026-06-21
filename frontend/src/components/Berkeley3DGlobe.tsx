@@ -7,7 +7,7 @@
  * Click a sidebar item to bring that card to the front and highlight it.
  *
  * ─── AGENT ROUTING ───
- *   openAgent(slug) → wire to specialist agents
+ *   Cards highlight each specialist; chat routes queries via the coordinator.
  *
  * ─── USAGE ───
  *   import Berkeley3DGlobe from "@/components/Berkeley3DGlobe";
@@ -15,10 +15,8 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { MapPin, ExternalLink, ChevronRight } from "lucide-react";
+import { MapPin, ChevronRight } from "lucide-react";
 
 export interface CampusAgent {
   id: string;
@@ -288,21 +286,6 @@ function AgentFlashcard({
         </div>
 
         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/55">{agent.description}</p>
-
-        {active && (
-          <div className="mt-3">
-            <Link
-              href={`/agent/${agent.id}`}
-              prefetch
-              onClick={(e) => e.stopPropagation()}
-              className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-semibold transition hover:brightness-110 active:scale-[0.98]"
-              style={{ background: agent.color, color: "#09080f" }}
-            >
-              Open Agent
-              <ExternalLink className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        )}
       </div>
     </motion.div>
   );
@@ -369,7 +352,6 @@ function CircularFlashcards({
 }
 
 export default function Berkeley3DGlobe() {
-  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [ringRotation, setRingRotation] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
@@ -395,10 +377,6 @@ export default function Berkeley3DGlobe() {
     },
     [snapToIndex]
   );
-
-  useEffect(() => {
-    campusAgents.forEach((a) => router.prefetch(`/agent/${a.id}`));
-  }, [router]);
 
   useEffect(() => {
     if (!autoRotate) return;

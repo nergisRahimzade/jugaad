@@ -252,8 +252,13 @@ export const api = {
     get("/demo/maria"),
 
   transcribeAudio: async (audio: Blob): Promise<string> => {
+    const ext = audio.type.includes("mp4")
+      ? "mp4"
+      : audio.type.includes("ogg")
+        ? "ogg"
+        : "webm";
     const formData = new FormData();
-    formData.append("file", audio, "recording.webm");
+    formData.append("file", audio, `recording.${ext}`);
     const data = await postForm<{ transcript: string }>("/speech/transcribe", formData);
     return data.transcript;
   },
