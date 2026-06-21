@@ -404,32 +404,56 @@ function DeadlineAlerts({
   }, [profile]);
 
   const urgent = alerts.filter((a) => ["48h", "7days"].includes(a.urgency));
-  if (loading || urgent.length === 0) return null;
+  const upcoming = alerts.filter((a) => a.urgency === "30days");
+  if (loading || (urgent.length === 0 && upcoming.length === 0)) return null;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border p-4 space-y-2"
-      style={{ borderColor: "rgba(248,113,113,0.3)", background: "rgba(248,113,113,0.06)" }}
+      className="rounded-2xl border p-4 space-y-3"
+      style={{ borderColor: urgent.length > 0 ? "rgba(248,113,113,0.3)" : "rgba(253,181,21,0.2)", background: urgent.length > 0 ? "rgba(248,113,113,0.06)" : "rgba(253,181,21,0.04)" }}
     >
-      <div className="flex items-center gap-2 mb-1">
-        <AlertTriangle className="w-4 h-4 text-red-400" />
-        <p className="text-sm font-semibold text-red-400">
-          {urgent.length} upcoming deadline{urgent.length > 1 ? "s" : ""} — don&apos;t miss these
-        </p>
-      </div>
-      {urgent.map((a) => (
-        <div key={a.hack_id} className="flex items-center justify-between text-xs">
-          <span className="text-white/70">{a.hack_name}</span>
-          <div className="flex items-center gap-2">
-            {a.dollar_value && <span className="text-berkeley-gold">{a.dollar_value}</span>}
-            <span className="text-red-400 font-semibold">
-              {(a.days_until ?? 99) <= 0 ? "TODAY" : (a.days_until ?? 99) <= 2 ? `${a.days_until}d` : `${a.days_until} days`}
-            </span>
+      {urgent.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+            <p className="text-sm font-semibold text-red-400">
+              {urgent.length} urgent deadline{urgent.length > 1 ? "s" : ""} — act now
+            </p>
           </div>
+          {urgent.map((a) => (
+            <div key={a.hack_id} className="flex items-center justify-between text-xs py-0.5">
+              <span className="text-white/70">{a.hack_name}</span>
+              <div className="flex items-center gap-2">
+                {a.dollar_value && <span className="text-berkeley-gold">{a.dollar_value}</span>}
+                <span className="text-red-400 font-semibold">
+                  {(a.days_until ?? 99) <= 0 ? "TODAY" : (a.days_until ?? 99) <= 2 ? `${a.days_until}d` : `${a.days_until} days`}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
+      {upcoming.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-4 h-4 text-berkeley-gold" />
+            <p className="text-sm font-semibold text-berkeley-gold">
+              {upcoming.length} upcoming deadline{upcoming.length > 1 ? "s" : ""}
+            </p>
+          </div>
+          {upcoming.map((a) => (
+            <div key={a.hack_id} className="flex items-center justify-between text-xs py-0.5">
+              <span className="text-white/70">{a.hack_name}</span>
+              <div className="flex items-center gap-2">
+                {a.dollar_value && <span className="text-berkeley-gold">{a.dollar_value}</span>}
+                <span className="text-white/40 font-medium">{a.days_until} days</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }

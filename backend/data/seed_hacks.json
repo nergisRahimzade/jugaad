@@ -1,17 +1,26 @@
 [
   {
     "id": "calfresh-student-exemption",
-    "name": "CalFresh (SNAP) — Student Exemption",
+    "name": "CalFresh (SNAP) \u2014 Student Exemption",
     "domain": "food",
-    "description": "Federal food assistance of ~$292/month. Most students with Pell Grant qualify under the student exemption — but most never apply because they assume students don't qualify.",
+    "description": "Federal food assistance of ~$292/month. Most students with Pell Grant qualify under the student exemption \u2014 but most never apply because they assume students don't qualify.",
     "how_to_access": "Apply at benefitscal.com. Takes 20-30 minutes. Bring your student ID and Pell Grant award letter. Benefits load onto an EBT card within 30 days, often sooner.",
     "url": "https://benefitscal.com",
     "phone": null,
     "dollar_value": "$292/month average",
     "effort_level": "Online form, 20-30 min",
-    "citizenship_required": ["US citizen", "permanent resident", "refugee"],
+    "citizenship_required": [
+      "US citizen",
+      "permanent resident",
+      "refugee"
+    ],
     "deadline": "rolling",
-    "tags": ["food", "government_benefit", "monthly", "high_value"]
+    "tags": [
+      "food",
+      "government_benefit",
+      "monthly",
+      "high_value"
+    ]
   },
   {
     "id": "calfresh-state-supplement",
@@ -23,15 +32,23 @@
     "phone": "(510) 268-7401",
     "dollar_value": "Same benefit as CalFresh",
     "effort_level": "In-person or online application",
-    "citizenship_required": ["DACA", "undocumented", "visa holder"],
+    "citizenship_required": [
+      "DACA",
+      "undocumented",
+      "visa holder"
+    ],
     "deadline": "rolling",
-    "tags": ["food", "government_benefit", "immigrants"]
+    "tags": [
+      "food",
+      "government_benefit",
+      "immigrants"
+    ]
   },
   {
     "id": "mlk-food-pantry",
-    "name": "UC Berkeley Food Pantry — MLK Student Union",
+    "name": "UC Berkeley Food Pantry \u2014 MLK Student Union",
     "domain": "food",
-    "description": "Free groceries in the lower level of MLK Student Union — literally one floor below the hackathon venue. No documentation required, no income verification.",
+    "description": "Free groceries in the lower level of MLK Student Union \u2014 literally one floor below the hackathon venue. No documentation required, no income verification.",
     "how_to_access": "Walk in during open hours. Bring your Cal 1 Card. Friday afternoons have the shortest lines. You can visit once per week.",
     "url": "https://basicneeds.berkeley.edu/food-pantry",
     "phone": "(510) 642-6325",
@@ -39,7 +56,12 @@
     "effort_level": "Walk-in, no appointment",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["food", "pantry", "walk-in", "weekly"]
+    "tags": [
+      "food",
+      "pantry",
+      "walk-in",
+      "weekly"
+    ]
   },
   {
     "id": "grab-n-go-meals",
@@ -53,7 +75,12 @@
     "effort_level": "No signup, just show up",
     "citizenship_required": [],
     "deadline": "daily",
-    "tags": ["food", "free", "daily", "no-documentation"]
+    "tags": [
+      "food",
+      "free",
+      "daily",
+      "no-documentation"
+    ]
   },
   {
     "id": "emergency-meal-swipes",
@@ -67,11 +94,15 @@
     "effort_level": "5 min email",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["food", "dining", "immediate"]
+    "tags": [
+      "food",
+      "dining",
+      "immediate"
+    ]
   },
   {
     "id": "market-match",
-    "name": "Market Match — Double Your CalFresh at Farmers Market",
+    "name": "Market Match \u2014 Double Your CalFresh at Farmers Market",
     "domain": "food",
     "description": "At the Saturday Berkeley Farmers Market, Market Match doubles your first $10 of CalFresh spending on fruits and vegetables. Effectively free produce.",
     "how_to_access": "Bring your EBT card to the info booth at the Saturday Berkeley Farmers Market (Center St & MLK Way). Ask for Market Match tokens.",
@@ -79,15 +110,23 @@
     "phone": null,
     "dollar_value": "$10 free produce per visit",
     "effort_level": "Show up with EBT card",
-    "citizenship_required": ["US citizen", "permanent resident", "refugee"],
-    "deadline": "weekly (Saturdays)",
-    "tags": ["food", "calfresh-stack", "farmers-market"]
+    "citizenship_required": [
+      "US citizen",
+      "permanent resident",
+      "refugee"
+    ],
+    "deadline": "weekly",
+    "tags": [
+      "food",
+      "calfresh-stack",
+      "farmers-market"
+    ]
   },
   {
     "id": "free-food-calendar",
-    "name": "Berkeley Free Food Calendar — Club Events",
+    "name": "Berkeley Free Food Calendar \u2014 Club Events",
     "domain": "food",
-    "description": "Dozens of student clubs host events with free catering every week — info sessions, networking nights, cultural celebrations. Most students don't think to attend for the food.",
+    "description": "Dozens of student clubs host events with free catering every week \u2014 info sessions, networking nights, cultural celebrations. Most students don't think to attend for the food.",
     "how_to_access": "Check the Berkeley Events calendar at events.berkeley.edu and filter for events with food. Also check your department's email list and department Discord.",
     "url": "https://events.berkeley.edu",
     "phone": null,
@@ -95,53 +134,72 @@
     "effort_level": "Check calendar, show up",
     "citizenship_required": [],
     "deadline": "ongoing",
-    "tags": ["food", "free", "social", "no-documentation"]
+    "tags": [
+      "food",
+      "free",
+      "social",
+      "no-documentation"
+    ]
   },
   {
     "id": "berkeley-student-food-collective",
     "name": "Berkeley Student Food Collective",
     "domain": "food",
     "description": "Student-run grocery store with sliding-scale pricing. You pay what you can. Located on campus.",
-    "how_to_access": "Located in the lower level of Hearst Gym. Walk in during open hours (Mon-Fri). Tell them your situation — they will work with you on price.",
+    "how_to_access": "Located in the lower level of Hearst Gym. Walk in during open hours (Mon-Fri). Tell them your situation \u2014 they will work with you on price.",
     "url": "https://bsfcoop.com",
     "phone": null,
-    "dollar_value": "Sliding scale — pay what you can",
+    "dollar_value": "Sliding scale \u2014 pay what you can",
     "effort_level": "Walk-in",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["food", "sliding-scale", "grocery"]
+    "tags": [
+      "food",
+      "sliding-scale",
+      "grocery"
+    ]
   },
   {
     "id": "basic-needs-emergency-housing",
     "name": "Basic Needs Center Emergency Housing",
     "domain": "housing",
     "description": "Short-term emergency housing for Berkeley students facing homelessness or housing insecurity. Connects to longer-term options. Available to all students regardless of documentation.",
-    "how_to_access": "Call (510) 642-6325 or walk into University Hall 201 during business hours. If after hours, call the 24/7 emergency line. Don't wait — contact them today.",
+    "how_to_access": "Call (510) 642-6325 or walk into University Hall 201 during business hours. If after hours, call the 24/7 emergency line. Don't wait \u2014 contact them today.",
     "url": "https://basicneeds.berkeley.edu/housing",
     "phone": "(510) 642-6325",
     "dollar_value": "Free temporary housing",
     "effort_level": "Phone call or walk-in",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["housing", "emergency", "immediate", "all-statuses"]
+    "tags": [
+      "housing",
+      "emergency",
+      "immediate",
+      "all-statuses"
+    ]
   },
   {
     "id": "bsc-co-ops",
-    "name": "BSC Co-ops — 30–50% Cheaper Than Dorms",
+    "name": "BSC Co-ops \u2014 30\u201350% Cheaper Than Dorms",
     "domain": "housing",
-    "description": "The Berkeley Student Cooperative runs 17 co-op houses near campus. Room and board runs $1,000–$1,400/month vs $2,200+ for dorms. Rolling admissions — most students never apply because they don't know BSC exists.",
-    "how_to_access": "Apply at bsc.coop/apply. Applications are rolling — apply anytime. Financial aid can be applied to co-op costs. Call (510) 848-1936 for current availability.",
+    "description": "The Berkeley Student Cooperative runs 17 co-op houses near campus. Room and board runs $1,000\u2013$1,400/month vs $2,200+ for dorms. Rolling admissions \u2014 most students never apply because they don't know BSC exists.",
+    "how_to_access": "Apply at bsc.coop/apply. Applications are rolling \u2014 apply anytime. Financial aid can be applied to co-op costs. Call (510) 848-1936 for current availability.",
     "url": "https://bsc.coop",
     "phone": "(510) 848-1936",
-    "dollar_value": "Save $800–$1,200/month vs dorms",
+    "dollar_value": "Save $800\u2013$1,200/month vs dorms",
     "effort_level": "Online application, 30 min",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["housing", "affordable", "long-term", "cooperative"]
+    "tags": [
+      "housing",
+      "affordable",
+      "long-term",
+      "cooperative"
+    ]
   },
   {
     "id": "rent-control-rights",
-    "name": "Berkeley Rent Control — Know Your Rights",
+    "name": "Berkeley Rent Control \u2014 Know Your Rights",
     "domain": "housing",
     "description": "Apartments built before 1980 in Berkeley have legally capped annual rent increases (currently ~2%). If your landlord raised rent more than that, you may be owed money back.",
     "how_to_access": "Look up your address at rent.berkeleyca.gov. If your building is covered, contact the Berkeley Rent Board at (510) 981-7368 for a free consultation.",
@@ -151,27 +209,37 @@
     "effort_level": "Address lookup (2 min), then free consult",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["housing", "rights", "legal", "off-campus"]
+    "tags": [
+      "housing",
+      "rights",
+      "legal",
+      "off-campus"
+    ]
   },
   {
     "id": "fafsa-housing-appeal",
     "name": "FAFSA Cost-of-Attendance Housing Appeal",
     "domain": "housing",
-    "description": "Berkeley's financial aid office uses a standard housing cost estimate. If your actual off-campus rent exceeds that estimate, you can appeal for more aid — potentially thousands more.",
+    "description": "Berkeley's financial aid office uses a standard housing cost estimate. If your actual off-campus rent exceeds that estimate, you can appeal for more aid \u2014 potentially thousands more.",
     "how_to_access": "Contact the Financial Aid Office at financialaid.berkeley.edu or (510) 642-0485. Request a 'Professional Judgment' appeal for housing costs. Bring 3 months of rent receipts.",
     "url": "https://financialaid.berkeley.edu/professional-judgment",
     "phone": "(510) 642-0485",
     "dollar_value": "Up to $6,000 additional aid",
     "effort_level": "Letter + rent documentation, 1 hour",
     "citizenship_required": [],
-    "deadline": "end of semester",
-    "tags": ["housing", "financial-aid", "appeal", "off-campus"]
+    "deadline": "2026-08-14",
+    "tags": [
+      "housing",
+      "financial-aid",
+      "appeal",
+      "off-campus"
+    ]
   },
   {
     "id": "lease-red-flag-scan",
     "name": "Lease Red-Flag Scanner",
     "domain": "housing",
-    "description": "Paste your lease text here and Jugaad will identify predatory clauses — illegal fees, improper security deposit terms, waived habitability rights, and more.",
+    "description": "Paste your lease text here and Jugaad will identify predatory clauses \u2014 illegal fees, improper security deposit terms, waived habitability rights, and more.",
     "how_to_access": "Use the Jugaad lease scanner feature. Paste your lease text. Takes 30 seconds.",
     "url": null,
     "phone": null,
@@ -179,27 +247,37 @@
     "effort_level": "Paste lease text, instant",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["housing", "legal", "lease", "tool"]
+    "tags": [
+      "housing",
+      "legal",
+      "lease",
+      "tool"
+    ]
   },
   {
     "id": "rapid-rehousing",
     "name": "Alameda County Rapid Rehousing",
     "domain": "housing",
     "description": "Short-term rental assistance and housing placement for students experiencing homelessness in Alameda County. Available regardless of immigration status.",
-    "how_to_access": "Get a referral through the Basic Needs Center at basicneeds.berkeley.edu. They'll connect you to the county program. Do not apply directly — go through Basic Needs first.",
+    "how_to_access": "Get a referral through the Basic Needs Center at basicneeds.berkeley.edu. They'll connect you to the county program. Do not apply directly \u2014 go through Basic Needs first.",
     "url": "https://basicneeds.berkeley.edu/housing/emergency",
     "phone": "(510) 642-6325",
-    "dollar_value": "3–24 months rental assistance",
+    "dollar_value": "3\u201324 months rental assistance",
     "effort_level": "Referral through Basic Needs, appointment",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["housing", "emergency", "county", "all-statuses"]
+    "tags": [
+      "housing",
+      "emergency",
+      "county",
+      "all-statuses"
+    ]
   },
   {
     "id": "special-circumstances-appeal",
-    "name": "Special Circumstances Appeal — Recalculate Your Aid",
+    "name": "Special Circumstances Appeal \u2014 Recalculate Your Aid",
     "domain": "financial_aid",
-    "description": "Your FAFSA uses last year's income. If your family's financial situation changed (job loss, divorce, medical bills), the Financial Aid Office can recalculate your aid using current income — which can add thousands of dollars.",
+    "description": "Your FAFSA uses last year's income. If your family's financial situation changed (job loss, divorce, medical bills), the Financial Aid Office can recalculate your aid using current income \u2014 which can add thousands of dollars.",
     "how_to_access": "Contact the Financial Aid Office at Sproul Hall Room 200 or (510) 642-0485. Ask for a 'Special Circumstances Appeal.' Bring documentation of the income change (termination letter, tax return, medical bills).",
     "url": "https://financialaid.berkeley.edu/professional-judgment",
     "phone": "(510) 642-0485",
@@ -207,27 +285,37 @@
     "effort_level": "Appointment + documentation, 1-2 hours",
     "citizenship_required": [],
     "deadline": "annual",
-    "tags": ["financial_aid", "appeal", "high_value", "underutilized"]
+    "tags": [
+      "financial_aid",
+      "appeal",
+      "high_value",
+      "underutilized"
+    ]
   },
   {
     "id": "emergency-grant",
     "name": "UC Berkeley Emergency Grant",
     "domain": "financial_aid",
-    "description": "One-time emergency grants of $500–$1,000 for unexpected financial hardship. Rolling applications, no repayment required. Administered by the Financial Aid Office.",
+    "description": "One-time emergency grants of $500\u2013$1,000 for unexpected financial hardship. Rolling applications, no repayment required. Administered by the Financial Aid Office.",
     "how_to_access": "Apply online at financialaid.berkeley.edu/emergency-funding or walk into Sproul Hall Room 200. You'll need a brief personal statement describing the emergency. Jugaad can generate this for you.",
     "url": "https://financialaid.berkeley.edu/emergency-funding",
     "phone": "(510) 642-0485",
-    "dollar_value": "$500–$1,000",
+    "dollar_value": "$500\u2013$1,000",
     "effort_level": "Online form + personal statement, 30 min",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["financial_aid", "grant", "emergency", "no-repayment"]
+    "tags": [
+      "financial_aid",
+      "grant",
+      "emergency",
+      "no-repayment"
+    ]
   },
   {
     "id": "short-term-emergency-loan",
     "name": "Short-Term Emergency Loan (FAFSA Bridge)",
     "domain": "financial_aid",
-    "description": "Interest-free loans of up to $1,500 to bridge the gap while waiting for financial aid disbursement — especially critical now that FAFSA processing is paused post-April 21, 2026.",
+    "description": "Interest-free loans of up to $1,500 to bridge the gap while waiting for financial aid disbursement \u2014 especially critical now that FAFSA processing is paused post-April 21, 2026.",
     "how_to_access": "Apply at the Financial Aid Office, Sproul Hall Room 200. Repaid automatically when your financial aid disburses. Usually approved within 2-3 business days.",
     "url": "https://financialaid.berkeley.edu/types-of-aid/loans/emergency-loans",
     "phone": "(510) 642-0485",
@@ -235,21 +323,31 @@
     "effort_level": "In-person application, 30 min",
     "citizenship_required": [],
     "deadline": "rolling",
-    "tags": ["financial_aid", "loan", "bridge", "fafsa-delay"]
+    "tags": [
+      "financial_aid",
+      "loan",
+      "bridge",
+      "fafsa-delay"
+    ]
   },
   {
     "id": "micro-scholarship-scan",
-    "name": "Micro-Scholarship Scan — Departmental Awards",
+    "name": "Micro-Scholarship Scan \u2014 Departmental Awards",
     "domain": "financial_aid",
-    "description": "Hundreds of $500–$2,000 departmental scholarships go unclaimed every semester because students don't know they exist. Your department almost certainly has at least 3.",
+    "description": "Hundreds of $500\u2013$2,000 departmental scholarships go unclaimed every semester because students don't know they exist. Your department almost certainly has at least 3.",
     "how_to_access": "Email your department's undergraduate advisor and ask: 'Are there any scholarships or awards available for students in [your major]?' This one email has gotten students thousands of dollars.",
     "url": null,
     "phone": null,
-    "dollar_value": "$500–$2,000 per award, multiple available",
+    "dollar_value": "$500\u2013$2,000 per award, multiple available",
     "effort_level": "One email, 5 min",
     "citizenship_required": [],
-    "deadline": "varies by department",
-    "tags": ["financial_aid", "scholarship", "departmental", "high_value"]
+    "deadline": "2026-09-15",
+    "tags": [
+      "financial_aid",
+      "scholarship",
+      "departmental",
+      "high_value"
+    ]
   },
   {
     "id": "fee-payment-plan",
@@ -262,12 +360,17 @@
     "dollar_value": "Avoid late fees ($200+)",
     "effort_level": "Online, 5 min",
     "citizenship_required": [],
-    "deadline": "first week of semester",
-    "tags": ["financial_aid", "tuition", "payment", "immediate"]
+    "deadline": "2026-08-28",
+    "tags": [
+      "financial_aid",
+      "tuition",
+      "payment",
+      "immediate"
+    ]
   },
   {
     "id": "dream-act-financial-aid",
-    "name": "California Dream Act — AB 540 Financial Aid",
+    "name": "California Dream Act \u2014 AB 540 Financial Aid",
     "domain": "financial_aid",
     "description": "If you attended a California high school for 3+ years, you qualify for the Dream Act regardless of immigration status. This gives access to Cal Grant B (up to $13K/year) and many institutional scholarships.",
     "how_to_access": "Complete the Dream Act application at dream.csac.ca.gov instead of FAFSA. Deadline: March 2. Contact the Undocumented Student Program at (510) 642-7294 for help.",
@@ -275,13 +378,21 @@
     "phone": "(510) 642-7294",
     "dollar_value": "Up to $13,000/year",
     "effort_level": "Online application, 30-60 min",
-    "citizenship_required": ["undocumented", "DACA"],
+    "citizenship_required": [
+      "undocumented",
+      "DACA"
+    ],
     "deadline": "2027-03-02",
-    "tags": ["financial_aid", "undocumented", "daca", "high_value"]
+    "tags": [
+      "financial_aid",
+      "undocumented",
+      "daca",
+      "high_value"
+    ]
   },
   {
     "id": "pell-grant-appeal",
-    "name": "Pell Grant Appeal — Maximum Award",
+    "name": "Pell Grant Appeal \u2014 Maximum Award",
     "domain": "financial_aid",
     "description": "Students with SAI/EFC of $0 are eligible for maximum Pell Grant ($7,395/year in 2025-26). If your award is less, you may be able to appeal or it may update automatically when you complete FAFSA correctly.",
     "how_to_access": "Contact the Financial Aid Office to verify your Pell Grant amount. If your SAI is $0 and you're receiving less than the maximum, request a review.",
@@ -289,27 +400,41 @@
     "phone": "(510) 642-0485",
     "dollar_value": "Up to $7,395/year",
     "effort_level": "Phone call or visit, 30 min",
-    "citizenship_required": ["US citizen", "permanent resident", "eligible non-citizen"],
+    "citizenship_required": [
+      "US citizen",
+      "permanent resident",
+      "eligible non-citizen"
+    ],
     "deadline": "annual",
-    "tags": ["financial_aid", "pell", "federal", "high_value"]
+    "tags": [
+      "financial_aid",
+      "pell",
+      "federal",
+      "high_value"
+    ]
   },
   {
     "id": "saferide",
-    "name": "NightSafe — Free Late-Night Shuttle",
+    "name": "NightSafe \u2014 Free Late-Night Shuttle",
     "domain": "safety",
     "description": "Free late-night shuttle service around Berkeley, running until 2am. Way safer and faster than walking alone at night.",
-    "how_to_access": "Download the Transloc app or visit ncts.berkeley.edu to see real-time shuttle locations and routes. Runs 7pm–2am daily.",
+    "how_to_access": "Download the Transloc app or visit ncts.berkeley.edu to see real-time shuttle locations and routes. Runs 7pm\u20132am daily.",
     "url": "https://pt.berkeley.edu/getting-around/shuttles",
     "phone": null,
     "dollar_value": "Free",
     "effort_level": "Download app, hop on",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["safety", "transportation", "night", "free"]
+    "tags": [
+      "safety",
+      "transportation",
+      "night",
+      "free"
+    ]
   },
   {
     "id": "safewalk",
-    "name": "SafeWalk — UCPD Escort Service",
+    "name": "SafeWalk \u2014 UCPD Escort Service",
     "domain": "safety",
     "description": "A UCPD officer will walk with you anywhere on or near campus, 24/7. No questions asked. Massively underutilized.",
     "how_to_access": "Call UCPD non-emergency at (510) 642-6760 and ask for SafeWalk. They'll meet you wherever you are within a few minutes.",
@@ -319,7 +444,12 @@
     "effort_level": "One phone call",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["safety", "escort", "24-7", "immediate"]
+    "tags": [
+      "safety",
+      "escort",
+      "24-7",
+      "immediate"
+    ]
   },
   {
     "id": "safe-route-telegraph",
@@ -333,11 +463,16 @@
     "effort_level": "Just take a different route",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["safety", "routing", "night", "southside"]
+    "tags": [
+      "safety",
+      "routing",
+      "night",
+      "southside"
+    ]
   },
   {
     "id": "campus-safety-sms",
-    "name": "BearWATCH — Anonymous Safety Tip Line",
+    "name": "BearWATCH \u2014 Anonymous Safety Tip Line",
     "domain": "safety",
     "description": "Report safety concerns or suspicious activity anonymously. Text-based, confidential.",
     "how_to_access": "Text 'TIP UCPD' followed by your message to 888777. You can also submit tips at ucpd.berkeley.edu/report.",
@@ -347,13 +482,17 @@
     "effort_level": "Text message",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["safety", "anonymous", "report"]
+    "tags": [
+      "safety",
+      "anonymous",
+      "report"
+    ]
   },
   {
     "id": "lets-talk-drop-in",
-    "name": "Let's Talk — Free Drop-In Counseling (No Appointment)",
+    "name": "Let's Talk \u2014 Free Drop-In Counseling (No Appointment)",
     "domain": "wellness",
-    "description": "Free informal counseling with a real CAPS counselor — no appointment, no waitlist, no paperwork. Multiple campus locations. Most students don't know this exists and wait weeks for a CAPS appointment instead.",
+    "description": "Free informal counseling with a real CAPS counselor \u2014 no appointment, no waitlist, no paperwork. Multiple campus locations. Most students don't know this exists and wait weeks for a CAPS appointment instead.",
     "how_to_access": "Check the Let's Talk schedule at uhs.berkeley.edu/counseling/lets-talk for this week's locations and times. Just show up. Usually 15-30 min per person.",
     "url": "https://uhs.berkeley.edu/counseling/lets-talk",
     "phone": null,
@@ -361,21 +500,33 @@
     "effort_level": "Just show up",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["wellness", "mental-health", "free", "no-appointment", "immediate"]
+    "tags": [
+      "wellness",
+      "mental-health",
+      "free",
+      "no-appointment",
+      "immediate"
+    ]
   },
   {
     "id": "ship-therapist-bypass",
-    "name": "SHIP Off-Campus Therapist — Same-Week Availability",
+    "name": "SHIP Off-Campus Therapist \u2014 Same-Week Availability",
     "domain": "wellness",
     "description": "Your student health insurance (SHIP) covers off-campus licensed therapists. These providers often have same-week or next-week availability while CAPS has a weeks-long waitlist. Most students don't know they can go off-campus.",
-    "how_to_access": "Go to the Optum/UHC provider portal (your SHIP carrier) and search for in-network therapists in Berkeley. Filter for 'accepting new patients.' Call directly — don't go through CAPS.",
+    "how_to_access": "Go to the Optum/UHC provider portal (your SHIP carrier) and search for in-network therapists in Berkeley. Filter for 'accepting new patients.' Call directly \u2014 don't go through CAPS.",
     "url": "https://uhs.berkeley.edu/insurance-ship",
     "phone": "(510) 642-5700",
     "dollar_value": "Covered by SHIP insurance",
     "effort_level": "Provider search + phone call, 20 min",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["wellness", "mental-health", "therapy", "insurance", "fast"]
+    "tags": [
+      "wellness",
+      "mental-health",
+      "therapy",
+      "insurance",
+      "fast"
+    ]
   },
   {
     "id": "caps-urgent-appointment",
@@ -386,16 +537,22 @@
     "url": "https://uhs.berkeley.edu/caps",
     "phone": "(510) 642-9494",
     "dollar_value": "Free with student fees",
-    "effort_level": "Phone call — be specific about urgency",
+    "effort_level": "Phone call \u2014 be specific about urgency",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["wellness", "mental-health", "caps", "urgent", "same-day"]
+    "tags": [
+      "wellness",
+      "mental-health",
+      "caps",
+      "urgent",
+      "same-day"
+    ]
   },
   {
     "id": "counseling-line-247",
-    "name": "24/7 Counseling Line — Call Anytime",
+    "name": "24/7 Counseling Line \u2014 Call Anytime",
     "domain": "wellness",
-    "description": "A real counselor available any time, day or night. Not a crisis hotline — actual counseling support.",
+    "description": "A real counselor available any time, day or night. Not a crisis hotline \u2014 actual counseling support.",
     "how_to_access": "Call 855-817-5667. Available 24/7, 365 days a year. Free for UC Berkeley students.",
     "url": null,
     "phone": "855-817-5667",
@@ -403,11 +560,17 @@
     "effort_level": "One phone call",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["wellness", "mental-health", "24-7", "immediate", "crisis"]
+    "tags": [
+      "wellness",
+      "mental-health",
+      "24-7",
+      "immediate",
+      "crisis"
+    ]
   },
   {
     "id": "peer-wellness-coaching",
-    "name": "Peer Wellness Coaching — Tang Center",
+    "name": "Peer Wellness Coaching \u2014 Tang Center",
     "domain": "wellness",
     "description": "Free 1-on-1 sessions with trained peer wellness coaches. Covers stress, sleep, anxiety, relationships, and academic pressure. Often next-day availability.",
     "how_to_access": "Book at uhs.berkeley.edu/wellness-coaching. Available in-person at Tang Center and via Zoom.",
@@ -417,13 +580,18 @@
     "effort_level": "Online booking, 5 min",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["wellness", "coaching", "peer", "fast"]
+    "tags": [
+      "wellness",
+      "coaching",
+      "peer",
+      "fast"
+    ]
   },
   {
     "id": "berkeleytime-grade-dist",
-    "name": "BerkeleyTime — Check Grade Distributions Before Enrolling",
+    "name": "BerkeleyTime \u2014 Check Grade Distributions Before Enrolling",
     "domain": "academic",
-    "description": "BerkeleyTime shows historical grade distributions for every course. CS 10 had a 35.3% F rate this semester — up from under 10% historically. This data is public but most students don't look at it before enrolling.",
+    "description": "BerkeleyTime shows historical grade distributions for every course. CS 10 had a 35.3% F rate this semester \u2014 up from under 10% historically. This data is public but most students don't look at it before enrolling.",
     "how_to_access": "Go to berkeleytime.com, search your course. Click 'Grades' to see historical distributions by semester and professor. Choose sections with instructors who have better grade distributions for the same course.",
     "url": "https://berkeleytime.com",
     "phone": null,
@@ -431,39 +599,55 @@
     "effort_level": "2 min lookup",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["academic", "enrollment", "grades", "data"]
+    "tags": [
+      "academic",
+      "enrollment",
+      "grades",
+      "data"
+    ]
   },
   {
     "id": "phase-1-enrollment-hack",
-    "name": "Phase 1 Enrollment Strategy — Get Into Impacted Courses",
+    "name": "Phase 1 Enrollment Strategy \u2014 Get Into Impacted Courses",
     "domain": "academic",
     "description": "Most students don't know the optimal strategy for Phase 1 enrollment. Adding a course to your waitlist at Phase 1 gives you waitlist priority. Specific unit loading strategies also affect your appointment time.",
-    "how_to_access": "In Phase 1: prioritize impacted required courses over electives. In Phase 2: add remaining courses. For waitlists: get on them in Phase 1, even if you're #20 — many spots open after add/drop.",
+    "how_to_access": "In Phase 1: prioritize impacted required courses over electives. In Phase 2: add remaining courses. For waitlists: get on them in Phase 1, even if you're #20 \u2014 many spots open after add/drop.",
     "url": "https://registrar.berkeley.edu/enrollment",
     "phone": null,
     "dollar_value": "Avoid semester delays",
     "effort_level": "Strategy change, no extra effort",
     "citizenship_required": [],
-    "deadline": "each enrollment period",
-    "tags": ["academic", "enrollment", "scheduling", "strategy"]
+    "deadline": "2026-07-13",
+    "tags": [
+      "academic",
+      "enrollment",
+      "scheduling",
+      "strategy"
+    ]
   },
   {
     "id": "fee-deferral-registration-hold",
-    "name": "Fee Deferral — Remove Registration Holds",
+    "name": "Fee Deferral \u2014 Remove Registration Holds",
     "domain": "academic",
-    "description": "Unpaid tuition generates a registration hold that blocks enrollment. The fee deferral splits payment into installments and removes the hold immediately — you don't have to pay anything upfront.",
+    "description": "Unpaid tuition generates a registration hold that blocks enrollment. The fee deferral splits payment into installments and removes the hold immediately \u2014 you don't have to pay anything upfront.",
     "how_to_access": "Log into CalCentral > My Finances > Billing > Payment Plan. Set up the deferral before the enrollment deadline. Hold is lifted within 24 hours.",
     "url": "https://studentbilling.berkeley.edu/fee-deferral",
     "phone": "(510) 642-3175",
     "dollar_value": "Removes enrollment block",
     "effort_level": "Online, 5 min",
     "citizenship_required": [],
-    "deadline": "before enrollment opens",
-    "tags": ["academic", "enrollment", "hold", "billing", "urgent"]
+    "deadline": "2026-07-10",
+    "tags": [
+      "academic",
+      "enrollment",
+      "hold",
+      "billing",
+      "urgent"
+    ]
   },
   {
     "id": "department-tutoring",
-    "name": "Free Department Tutoring — CSC, ASUC",
+    "name": "Free Department Tutoring \u2014 CSC, ASUC",
     "domain": "academic",
     "description": "Most departments offer free tutoring that goes almost completely unused. CS tutoring at the Student Learning Center is staffed by graduate students and is often better than office hours.",
     "how_to_access": "For CS: visit slc.berkeley.edu for the Computer Science Tutoring schedule. For other departments: email your department's undergraduate advisor and ask 'what tutoring resources are available?'",
@@ -473,7 +657,12 @@
     "effort_level": "Check schedule, show up",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["academic", "tutoring", "free", "cs"]
+    "tags": [
+      "academic",
+      "tutoring",
+      "free",
+      "cs"
+    ]
   },
   {
     "id": "study-group-matching",
@@ -487,6 +676,11 @@
     "effort_level": "Discord search, 5 min",
     "citizenship_required": [],
     "deadline": null,
-    "tags": ["academic", "study-group", "community", "discord"]
+    "tags": [
+      "academic",
+      "study-group",
+      "community",
+      "discord"
+    ]
   }
 ]
