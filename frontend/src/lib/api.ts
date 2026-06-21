@@ -8,7 +8,14 @@ import type { AgentEvent } from "./types";
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
 
 export type CoordinatorStreamEvent =
-  | { type: "meta"; agents: string[]; requestId?: string }
+  | {
+      type: "meta";
+      agents: string[];
+      requestId?: string;
+      missingProfileFields?: string[];
+      profileCompleteness?: number;
+      profilePatch?: Partial<StudentProfile>;
+    }
   | { type: "agent_event"; event: Omit<AgentEvent, "id" | "timestamp"> }
   | { type: "chunk"; text: string };
 
@@ -36,10 +43,20 @@ async function* readSseStream(
               type?: string;
               agents?: string[];
               requestId?: string;
+              missingProfileFields?: string[];
+              profileCompleteness?: number;
+              profilePatch?: Partial<StudentProfile>;
               event?: Omit<AgentEvent, "id" | "timestamp">;
             };
             if (parsed.type === "meta" && parsed.agents) {
-              yield { type: "meta", agents: parsed.agents, requestId: parsed.requestId };
+              yield {
+                type: "meta",
+                agents: parsed.agents,
+                requestId: parsed.requestId,
+                missingProfileFields: parsed.missingProfileFields,
+                profileCompleteness: parsed.profileCompleteness,
+                profilePatch: parsed.profilePatch,
+              };
               continue;
             }
             if (parsed.type === "agent_event" && parsed.event) {
@@ -72,10 +89,20 @@ async function* readSseStream(
               type?: string;
               agents?: string[];
               requestId?: string;
+              missingProfileFields?: string[];
+              profileCompleteness?: number;
+              profilePatch?: Partial<StudentProfile>;
               event?: Omit<AgentEvent, "id" | "timestamp">;
             };
             if (parsed.type === "meta" && parsed.agents) {
-              yield { type: "meta", agents: parsed.agents, requestId: parsed.requestId };
+              yield {
+                type: "meta",
+                agents: parsed.agents,
+                requestId: parsed.requestId,
+                missingProfileFields: parsed.missingProfileFields,
+                profileCompleteness: parsed.profileCompleteness,
+                profilePatch: parsed.profilePatch,
+              };
               continue;
             }
             if (parsed.type === "agent_event" && parsed.event) {
@@ -234,8 +261,12 @@ export const api = {
   streamChat: async function* (
     message: string,
     messages: { role: string; content: string }[],
-    options?: { profile?: StudentProfile | null; domain?: string }
-  ): AsyncGenerator<string> {
+    options?: {
+      profile?: StudentProfile | null;
+      profileInitialized?: boolean;
+      domain?: string;
+    }
+  ): AsyncGenerator<string | CoordinatorStreamEvent> {
     const res = await fetch(`${BASE_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -243,6 +274,7 @@ export const api = {
         message,
         messages,
         profile: options?.profile ?? null,
+        profile_initialized: options?.profileInitialized ?? false,
         domain: options?.domain ?? null,
       }),
     });
@@ -252,15 +284,19 @@ export const api = {
       throw new Error(`API error ${res.status}: ${err}`);
     }
 
-    for await (const event of readSseStream(res)) {
-      if (typeof event === "string") yield event;
+    for await (const event of readSseStream(res, true)) {
+      if (typeof event === "string") {
+        yield { type: "chunk", text: event };
+      } else {
+        yield event;
+      }
     }
   },
 
   streamCoordinator: async function* (
     message: string,
     messages: { role: string; content: string }[],
-    options?: { profile?: StudentProfile | null }
+    options?: { profile?: StudentProfile | null; profileInitialized?: boolean }
   ): AsyncGenerator<CoordinatorStreamEvent> {
     const res = await fetch(`${BASE_URL}/chat/coordinator`, {
       method: "POST",
@@ -269,6 +305,7 @@ export const api = {
         message,
         messages,
         profile: options?.profile ?? null,
+        profile_initialized: options?.profileInitialized ?? false,
       }),
     });
 

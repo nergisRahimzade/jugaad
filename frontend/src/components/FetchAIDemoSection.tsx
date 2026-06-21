@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { MessageSquare, Radio } from "lucide-react";
 import { AGENTS, CROSS_DOMAIN_TRIGGERS } from "@/lib/agents";
 import { useAppState } from "@/context/AppStateContext";
@@ -94,18 +93,14 @@ export function FetchAIDemoSection() {
           </div>
 
           {mergedResponse && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass rounded-2xl p-4 space-y-3"
-            >
+            <div className="glass rounded-2xl p-4 space-y-3">
               <h4 className="text-sm font-semibold text-white flex items-center gap-2">
                 <span className="text-emerald-400">✓</span> Jugaad Response
               </h4>
               <pre className="text-xs text-white/80 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
                 {mergedResponse}
               </pre>
-            </motion.div>
+            </div>
           )}
         </div>
 

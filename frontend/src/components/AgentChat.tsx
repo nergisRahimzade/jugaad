@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Send } from "lucide-react";
-import { api, StudentProfile } from "@/lib/api";
+import { api } from "@/lib/api";
 import { campusAgentToDomain, type CampusAgent } from "@/components/Berkeley3DGlobe";
+import { useAppState } from "@/context/AppStateContext";
 
 interface Message {
   role: "assistant" | "user";
@@ -15,18 +16,8 @@ interface AgentChatProps {
   agent: CampusAgent;
 }
 
-function loadProfile(): StudentProfile | null {
-  if (typeof window === "undefined") return null;
-  const stored = sessionStorage.getItem("jugaad_profile");
-  if (!stored) return null;
-  try {
-    return JSON.parse(stored) as StudentProfile;
-  } catch {
-    return null;
-  }
-}
-
 export default function AgentChat({ agent }: AgentChatProps) {
+  const { profile, profileInitialized, patchProfile } = useAppState();
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -36,7 +27,6 @@ export default function AgentChat({ agent }: AgentChatProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [profile] = useState<StudentProfile | null>(() => loadProfile());
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const domain = campusAgentToDomain(agent.id);
@@ -72,8 +62,18 @@ export default function AgentChat({ agent }: AgentChatProps) {
 
     try {
       const prior = messages.map(({ role, content }) => ({ role, content }));
-      for await (const chunk of api.streamChat(text, prior, { profile, domain })) {
-        assistantText += chunk;
+      for await (const event of api.streamChat(text, prior, {
+        profile,
+        profileInitialized,
+        domain,
+      })) {
+        if (typeof event === "string") {
+          assistantText += event;
+        } else if (event.type === "meta") {
+          if (event.profilePatch) patchProfile(event.profilePatch);
+        } else if (event.type === "chunk") {
+          assistantText += event.text;
+        }
         setMessages((prev) => {
           const next = [...prev];
           next[next.length - 1] = { role: "assistant", content: assistantText };

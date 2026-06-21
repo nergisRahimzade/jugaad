@@ -20,6 +20,8 @@ interface AgentActivityFeedProps {
   maxHeight?: string;
   title?: string;
   highlightProtocol?: boolean;
+  /** When false (default), new events never auto-scroll — user scrolls manually. */
+  autoScroll?: boolean;
 }
 
 export function AgentActivityFeed({
@@ -27,12 +29,14 @@ export function AgentActivityFeed({
   maxHeight = "400px",
   title = "Agent Activity Feed",
   highlightProtocol = false,
+  autoScroll = false,
 }: AgentActivityFeedProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [events.length]);
+    if (!autoScroll || !scrollRef.current) return;
+    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [events.length, autoScroll]);
 
   return (
     <div className={`glass rounded-2xl overflow-hidden flex flex-col ${maxHeight === "flex" ? "flex-1 min-h-0" : ""}`}>
@@ -48,6 +52,7 @@ export function AgentActivityFeed({
       </div>
 
       <div
+        ref={scrollRef}
         className={`overflow-y-auto p-3 space-y-2 font-mono text-xs ${
           maxHeight === "flex" ? "flex-1 min-h-[180px]" : ""
         }`}
@@ -93,7 +98,6 @@ export function AgentActivityFeed({
             })
           )}
         </AnimatePresence>
-        <div ref={bottomRef} />
       </div>
     </div>
   );

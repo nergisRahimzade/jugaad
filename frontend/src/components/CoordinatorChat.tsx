@@ -1,9 +1,10 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Loader2, Send } from "lucide-react";
-import { api, StudentProfile } from "@/lib/api";
+import { api } from "@/lib/api";
 import { getAgent } from "@/lib/agents";
 import { useAppState } from "@/context/AppStateContext";
 import type { AgentDomain, AgentEvent } from "@/lib/types";
@@ -21,17 +22,6 @@ function toAgentEvent(raw: Omit<AgentEvent, "id" | "timestamp">): AgentEvent {
 
 function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
-}
-
-function loadProfile(): StudentProfile | null {
-  if (typeof window === "undefined") return null;
-  const stored = sessionStorage.getItem("jugaad_profile");
-  if (!stored) return null;
-  try {
-    return JSON.parse(stored) as StudentProfile;
-  } catch {
-    return null;
-  }
 }
 
 function stripAgentsHeader(text: string): string {
@@ -106,11 +96,19 @@ interface CoordinatorChatProps {
 }
 
 export default function CoordinatorChat({ fullPage = false, initialMessage = null }: CoordinatorChatProps) {
-  const { chatMessages: messages, setChatMessages: setMessages, setOrchestration } = useAppState();
+  const {
+    chatMessages: messages,
+    setChatMessages: setMessages,
+    setOrchestration,
+    profile,
+    profileInitialized,
+    patchProfile,
+    user,
+  } = useAppState();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [profile] = useState<StudentProfile | null>(() => loadProfile());
+  const [missingFields, setMissingFields] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const initialSent = useRef(false);
@@ -153,9 +151,14 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     };
 
     try {
-      for await (const event of api.streamCoordinator(text, prior, { profile })) {
+      for await (const event of api.streamCoordinator(text, prior, {
+        profile,
+        profileInitialized,
+      })) {
         if (event.type === "meta") {
           routedAgents = event.agents;
+          if (event.missingProfileFields) setMissingFields(event.missingProfileFields);
+          if (event.profilePatch) patchProfile(event.profilePatch);
           setOrchestration((o) => ({
             ...o,
             activeAgents: ["coordinator", ...(event.agents as AgentDomain[])],
@@ -284,6 +287,25 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
       )}
 
       {error && <p className="text-red-400/80 text-xs text-center mb-3">{error}</p>}
+
+      {!user && messages.length === 0 && (
+        <p className="text-center text-xs text-white/35 mb-3">
+          <Link href="/profile" className="text-[#fdb515] hover:underline">
+            Set up your profile
+          </Link>{" "}
+          for personalized answers
+        </p>
+      )}
+
+      {missingFields.length > 0 && messages.length > 0 && (
+        <p className="text-center text-[11px] text-white/30 mb-3 px-2">
+          Jugaad may ask about{" "}
+          {missingFields.slice(0, 2).join(", ").replace(/_/g, " ")} — answer in chat or{" "}
+          <Link href="/profile" className="text-[#fdb515] hover:underline">
+            update profile
+          </Link>
+        </p>
+      )}
 
       <form
         onSubmit={handleSubmit}

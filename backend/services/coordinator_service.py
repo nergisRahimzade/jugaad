@@ -102,25 +102,37 @@ def route_domains(message: str) -> list[str]:
     return ["wellness"]
 
 
-def build_coordinator_system(domains: list[str], profile_context: str | None) -> str:
-    if not domains:
-        coordinator_addendum = """COORDINATOR MODE — general question.
+def build_coordinator_system(
+    domains: list[str],
+    profile_context: str | None,
+    profile_addendum: str | None = None,
+) -> str:
+    profile_block = profile_addendum or ""
+    if profile_context and not profile_addendum:
+        profile_block = "Use the student context below to personalize your answer."
 
-Answer directly as Jugaad in 2–4 short sentences. Warm, human, no intake interview.
-Do NOT mention specialist agents. Do NOT dump resource lists unless they asked for help with something specific."""
+    if not domains:
+        coordinator_addendum = f"""COORDINATOR MODE — general question.
+
+Answer directly as Jugaad in 2–4 short sentences. Warm, human.
+Do NOT mention specialist agents. Do NOT dump resource lists unless they asked for help with something specific.
+
+{profile_block}"""
         return build_system_prompt(profile_context, coordinator_addendum)
 
     labels = [AGENT_LABELS[d] for d in domains]
     domain_knowledge = "\n\n".join(DOMAIN_PROMPTS[d] for d in domains)
     coordinator_addendum = f"""COORDINATOR MODE — activated specialists (already shown in the UI as badges): {", ".join(labels)}
 
-Answer the student's question RIGHT NOW. Do NOT run an intake interview.
+Answer the student's question using specialist knowledge below.
 
 CRITICAL FORMAT RULES:
 - Do NOT output an "Agents:" line or list agent names — the UI already shows them.
 - Do NOT repeat the agent names in your opening sentence.
 - Use plain text only (no markdown bold with **).
 - Keep the answer scannable: 2–4 short paragraphs max, then one concrete next step.
+
+{profile_block}
 
 Specialist knowledge:
 {domain_knowledge}"""

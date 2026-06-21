@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import IntakeChat from "@/components/IntakeChat";
 import { StudentProfile } from "@/lib/api";
+import { useAppState } from "@/context/AppStateContext";
 
 export default function IntakePage() {
   const router = useRouter();
+  const { setProfile } = useAppState();
+
   function handleComplete(p: StudentProfile) {
-    // Store profile in sessionStorage so the dashboard can pick it up
-    sessionStorage.setItem("jugaad_profile", JSON.stringify(p));
+    setProfile(p);
     router.push("/dashboard");
   }
 
