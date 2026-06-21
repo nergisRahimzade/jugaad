@@ -3,11 +3,12 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, Mic, MicOff, Send } from "lucide-react";
+import { Loader2, Mic, MicOff, Send, Volume2, VolumeX } from "lucide-react";
 import { api } from "@/lib/api";
 import { getAgent } from "@/lib/agents";
 import { useAppState } from "@/context/AppStateContext";
 import { useSpeechToText } from "@/lib/useSpeechToText";
+import { useTextToSpeech } from "@/lib/useTextToSpeech";
 import type { AgentDomain, AgentEvent } from "@/lib/types";
 
 const EVENT_STAGGER_MS = 160;
@@ -123,7 +124,20 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     setError: setSpeechError,
   } = useSpeechToText();
 
+  const {
+    speaking,
+    synthesizing,
+    error: ttsError,
+    speak,
+    stop: stopSpeaking,
+  } = useTextToSpeech();
+
   const voiceBusy = listening || transcribing;
+  const latestAssistantText = stripAgentsHeader(
+    [...messages].reverse().find((msg) => msg.role === "assistant" && msg.content.trim())
+      ?.content ?? ""
+  );
+  const canSpeakLatest = Boolean(latestAssistantText) && !loading && !voiceBusy;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -133,6 +147,7 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     const text = (textOverride ?? input).trim();
     if (!text || loading) return;
 
+    stopSpeaking();
     setInput("");
     const prior = messages.map(({ role, content }) => ({ role, content }));
     setMessages((prev) => [...prev, { role: "user", content: text }]);
@@ -234,6 +249,17 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     await toggleListening();
   };
 
+  const toggleSpokenResponse = () => {
+    if (speaking || synthesizing) {
+      stopSpeaking();
+      return;
+    }
+
+    if (canSpeakLatest) {
+      void speak(latestAssistantText);
+    }
+  };
+
   useEffect(() => {
     if (initialSent.current || !initialMessage?.trim()) return;
     initialSent.current = true;
@@ -313,8 +339,8 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
         </div>
       )}
 
-      {(error || speechError) && (
-        <p className="text-red-400/80 text-xs text-center mb-3">{error ?? speechError}</p>
+      {(error || speechError || ttsError) && (
+        <p className="text-red-400/80 text-xs text-center mb-3">{error ?? speechError ?? ttsError}</p>
       )}
 
       {!user && messages.length === 0 && (
@@ -364,6 +390,31 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Mic className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={toggleSpokenResponse}
+            disabled={!canSpeakLatest && !speaking && !synthesizing}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all disabled:opacity-25 ${
+              speaking || synthesizing
+                ? "border-[#fdb515]/50 bg-[#fdb515]/15 text-[#fdb515]"
+                : "border-white/10 text-white/70 hover:bg-white/5 hover:text-white"
+            }`}
+            aria-label={
+              speaking
+                ? "Stop spoken response"
+                : synthesizing
+                  ? "Generating spoken response"
+                  : "Speak latest assistant response"
+            }
+          >
+            {synthesizing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : speaking ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
             )}
           </button>
           <textarea
