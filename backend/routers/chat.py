@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import asyncio
 import json
 from models.student import StudentProfile
 from prompts.master import build_system_prompt
@@ -17,6 +18,9 @@ from services.coordinator_service import (
     build_coordinator_system,
     build_orchestration_events,
 )
+from agents.services.agentverse_client import chat_with_coordinator
+from agents.config import COORDINATOR_ADDRESS
+from services.data_layer_service import gather_domain_intel
 from services.profile_service import (
     analyze_profile,
     build_profile_addendum,
@@ -70,8 +74,13 @@ async def coordinator_chat(request: CoordinatorRequest):
 
     analysis = analyze_profile(profile, domains, request.profile_initialized)
     profile_addendum = build_profile_addendum(analysis, domains)
-    system = build_coordinator_system(domains, analysis.context, profile_addendum)
-    request_id, orchestration_events = build_orchestration_events(request.message)
+    data_context, intel_by_domain = gather_domain_intel(
+        request.message, domains, profile
+    )
+    request_id, orchestration_events = build_orchestration_events(
+        request.message,
+        intel_events_by_domain=intel_by_domain,
+    )
 
     async def event_stream():
         meta = {
@@ -84,8 +93,40 @@ async def coordinator_chat(request: CoordinatorRequest):
         if profile_patch:
             meta["profilePatch"] = profile_patch
         yield f"data: {json.dumps(meta)}\n\n"
+
         for event in orchestration_events:
             yield f'data: {json.dumps({"type": "agent_event", "event": event})}\n\n'
+
+        agentverse_context: str | None = None
+        if domains and COORDINATOR_ADDRESS:
+            short_addr = COORDINATOR_ADDRESS[:20] + "…"
+            yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "agentverse", "message": f"Dispatching ChatMessage to Agentverse Coordinator ({short_addr}) via relay…", "meta": {"target": short_addr, "requestId": request_id}}})}\n\n'
+
+            av_result = await asyncio.to_thread(
+                chat_with_coordinator,
+                request.message,
+                session_id=request_id,
+            )
+            av_status = av_result.get("status", "error")
+
+            if av_status == "success" and av_result.get("text"):
+                agentverse_context = av_result["text"]
+                preview = agentverse_context[:120].replace("\n", " ")
+                yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "agentverse", "message": f"Agentverse Coordinator responded ({len(agentverse_context)} chars): {preview}…", "meta": {"requestId": request_id, "status": "success"}}})}\n\n'
+            else:
+                err = av_result.get("error", av_status)
+                agentverse_context = f"(Agentverse unavailable: {err}. Using Claude + Redis/Browserbase only.)"
+                yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "agentverse", "message": f"Agentverse fallback — {err}", "meta": {"requestId": request_id, "status": av_status}}})}\n\n'
+
+        yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "merge", "message": "Claude synthesizing Agentverse plan + Redis/Browserbase + profile…", "meta": {"requestId": request_id}}})}\n\n'
+
+        system = build_coordinator_system(
+            domains,
+            analysis.context,
+            profile_addendum,
+            data_context,
+            agentverse_context=agentverse_context,
+        )
         async for chunk in logged_stream(
             system=system,
             messages=history,

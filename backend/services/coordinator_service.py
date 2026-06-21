@@ -106,6 +106,8 @@ def build_coordinator_system(
     domains: list[str],
     profile_context: str | None,
     profile_addendum: str | None = None,
+    data_context: str | None = None,
+    agentverse_context: str | None = None,
 ) -> str:
     profile_block = profile_addendum or ""
     if profile_context and not profile_addendum:
@@ -136,6 +138,17 @@ CRITICAL FORMAT RULES:
 
 Specialist knowledge:
 {domain_knowledge}"""
+
+    if data_context:
+        coordinator_addendum += f"\n\n{data_context}"
+
+    if agentverse_context:
+        coordinator_addendum += f"""
+
+AGENTVERSE MULTI-AGENT PLAN (live from Fetch.ai Coordinator on Agentverse — treat as ground truth for specialist routing):
+{agentverse_context}
+
+Synthesize this agent plan with Redis/Browserbase data above. Keep Fetch.ai agent contributions visible in your answer (e.g. mention the stacking plan specialists returned). Do not claim agents ran if this block says unavailable."""
 
     return build_system_prompt(profile_context, coordinator_addendum)
 
@@ -174,12 +187,22 @@ def _agent_address(domain: str) -> str:
     return _DEMO_ADDRESSES.get(domain, f"agent1q…{domain[:4]}")
 
 
-def build_orchestration_events(message: str, request_id: str | None = None) -> tuple[str, list[dict]]:
+def build_orchestration_events(
+    message: str,
+    request_id: str | None = None,
+    intel_events_by_domain: dict[str, list[dict]] | None = None,
+    session_id: str | None = None,
+) -> tuple[str, list[dict]]:
     """
     Build agent activity events mirroring Fetch.ai uAgent coordinator flow.
     Returns (request_id, events) for SSE streaming to the frontend.
     """
+    from agents.services import band_room
+
     request_id = request_id or str(uuid4())[:8]
+    band_session = session_id or request_id
+    band_room.create_session(band_session)
+
     domains = route_domains(message)
     short = message[:55] + ("…" if len(message) > 55 else "")
     events: list[dict] = []
@@ -253,13 +276,20 @@ def build_orchestration_events(message: str, request_id: str | None = None) -> t
                 "meta": {"requestId": request_id},
             }
         )
-        events.append(
-            {
-                "agentId": domain,
-                "type": "search",
-                "message": "Querying Redis vector search + Berkeley domain knowledge base",
-            }
-        )
+        for intel_event in (intel_events_by_domain or {}).get(domain, []):
+            events.append(intel_event)
+
+        if not (intel_events_by_domain or {}).get(domain):
+            events.append(
+                {
+                    "agentId": domain,
+                    "type": "search",
+                    "message": "Querying Redis vector search + Berkeley domain knowledge base",
+                }
+            )
+
+        if domain in matched:
+            band_room.publish(band_session, domain, f"Processing: {short}")
 
         if domain in matched and domain in CROSS_DOMAIN_TRIGGERS:
             linked = [t for t in CROSS_DOMAIN_TRIGGERS[domain] if t in domains]

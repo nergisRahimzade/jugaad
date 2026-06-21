@@ -21,6 +21,12 @@ export default function ProfilePage() {
           <p className="text-white/40 text-xs mt-1">
             Sign in and tell Jugaad about your situation for personalized resource matching
           </p>
+          <Link
+            href="/contribute"
+            className="inline-block mt-3 text-xs text-amber-400/80 hover:text-amber-300 transition"
+          >
+            Share a jugaad hack you discovered →
+          </Link>
         </div>
       </div>
 

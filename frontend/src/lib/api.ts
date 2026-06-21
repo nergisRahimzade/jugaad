@@ -340,4 +340,28 @@ export const api = {
       }
     }
   },
+
+  contribute: (payload: {
+    name: string;
+    domain: string;
+    description: string;
+    how_to_access: string;
+    url?: string;
+    phone?: string;
+    dollar_value?: string;
+    effort_level?: string;
+    contributor_handle?: string;
+  }): Promise<{ id: string; accepted: boolean; indexed: boolean }> =>
+    post("/contribute", payload),
+
+  previewContributions: (
+    domain?: string,
+    limit = 5
+  ): Promise<{ results: HackItem[] }> => {
+    const params = new URLSearchParams();
+    if (domain) params.set("domain", domain);
+    params.set("limit", String(limit));
+    const qs = params.toString();
+    return get(`/contributions/preview${qs ? `?${qs}` : ""}`);
+  },
 };

@@ -3,8 +3,9 @@ import uuid
 from models.student import StudentProfile, IntakeSession
 from prompts.intake import INTAKE_SYSTEM, EXTRACTION_PROMPT, OPENING_MESSAGE
 from core.arize_logger import logged_complete
+from agents.services import redis_memory
 
-# In-memory session store — Person 3's Redis will slot in here without touching routers
+# Fast in-process cache; Redis Agent Memory is the source of truth when available.
 _sessions: dict[str, IntakeSession] = {}
 
 MIN_QUESTIONS = 8  # enough turns for citizenship + core fields before extraction
@@ -20,6 +21,47 @@ _CITIZENSHIP_ASK_MARKERS = (
     "comfortable sharing",
     "immigration status",
 )
+
+
+def _session_to_dict(session: IntakeSession) -> dict:
+    return {
+        "session_id": session.session_id,
+        "messages": session.messages,
+        "profile": session.profile.model_dump() if session.profile else None,
+        "questions_asked": session.questions_asked,
+        "is_complete": session.is_complete,
+    }
+
+
+def _session_from_dict(data: dict) -> IntakeSession:
+    profile_data = data.get("profile")
+    profile = StudentProfile(**profile_data) if profile_data else None
+    return IntakeSession(
+        session_id=data["session_id"],
+        messages=data.get("messages") or [],
+        profile=profile,
+        questions_asked=data.get("questions_asked") or 0,
+        is_complete=bool(data.get("is_complete")),
+    )
+
+
+def _persist_session(session: IntakeSession) -> None:
+    _sessions[session.session_id] = session
+    redis_memory.put_session(session.session_id, _session_to_dict(session))
+
+
+def _load_session(session_id: str) -> IntakeSession | None:
+    cached = _sessions.get(session_id)
+    if cached:
+        return cached
+
+    stored = redis_memory.get_session(session_id)
+    if not stored or not stored.get("session_id"):
+        return None
+
+    session = _session_from_dict(stored)
+    _sessions[session_id] = session
+    return session
 
 
 def _citizenship_was_asked(session: IntakeSession) -> bool:
@@ -43,7 +85,7 @@ def start_session() -> tuple[str, str]:
         {"role": "assistant", "content": OPENING_MESSAGE}
     ]
     session.questions_asked = 1
-    _sessions[session_id] = session
+    _persist_session(session)
     return session_id, OPENING_MESSAGE
 
 
@@ -53,7 +95,7 @@ def continue_session(session_id: str, answer: str) -> dict:
     or extract the profile.
     Returns: {"message": str, "is_complete": bool, "profile": dict | None}
     """
-    session = _sessions.get(session_id)
+    session = _load_session(session_id)
     if not session:
         raise ValueError(f"Session not found: {session_id}")
 
@@ -71,6 +113,7 @@ def continue_session(session_id: str, answer: str) -> dict:
     if _should_attempt_extract(session):
         result = _try_extract(session)
         if result:
+            _persist_session(session)
             return result
 
     # Hard cap — force complete with whatever we have so the user isn't stuck
@@ -80,6 +123,7 @@ def continue_session(session_id: str, answer: str) -> dict:
         session.is_complete = True
         completion_msg = "Got it — I've built your profile. Let me pull up everything you qualify for."
         session.messages.append({"role": "assistant", "content": completion_msg})
+        _persist_session(session)
         return {
             "message": completion_msg,
             "is_complete": True,
@@ -101,8 +145,10 @@ def continue_session(session_id: str, answer: str) -> dict:
     if "let me pull up what you qualify for" in response.lower() and _citizenship_was_asked(session):
         result = _try_extract(session)
         if result:
+            _persist_session(session)
             return result
 
+    _persist_session(session)
     return {
         "message": response,
         "is_complete": False,
@@ -148,6 +194,13 @@ def _try_extract(session: IntakeSession) -> dict | None:
         )
         session.messages.append({"role": "assistant", "content": completion_msg})
 
+        user_id = session.session_id
+        redis_memory.add_fact(
+            user_id,
+            profile_to_fact(profile),
+            topics=["intake", "profile"],
+        )
+
         return {
             "message": completion_msg,
             "is_complete": True,
@@ -158,5 +211,14 @@ def _try_extract(session: IntakeSession) -> dict | None:
         return None
 
 
+def profile_to_fact(profile: StudentProfile) -> str:
+    aid = ", ".join(profile.current_aid) if profile.current_aid else "none"
+    return (
+        f"Student profile: {profile.enrollment_status}, citizenship {profile.citizenship}, "
+        f"housing {profile.housing_situation}, SAI ${profile.efc_sai}, aid [{aid}], "
+        f"major {profile.major}."
+    )
+
+
 def get_session(session_id: str) -> IntakeSession | None:
-    return _sessions.get(session_id)
+    return _load_session(session_id)

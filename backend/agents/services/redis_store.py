@@ -50,12 +50,14 @@ def _get_redis_client():
         # Bounded timeouts so a paused/expired Redis Cloud instance (TCP accepts
         # the connection but never answers the RESP handshake) fails fast and we
         # fall back to static knowledge instead of hanging the whole app.
-        client = redis.from_url(
-            settings.redis_url,
-            decode_responses=True,
-            socket_connect_timeout=5,
-            socket_timeout=5,
-        )
+        kwargs: dict[str, Any] = {
+            "decode_responses": True,
+            "socket_connect_timeout": 10,
+            "socket_timeout": 15,
+        }
+        if settings.redis_url.startswith("rediss://"):
+            kwargs["ssl_cert_reqs"] = None
+        client = redis.from_url(settings.redis_url, **kwargs)
         client.ping()
         _redis_client = client
         return client

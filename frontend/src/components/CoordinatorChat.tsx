@@ -143,7 +143,7 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  const sendMessage = async (textOverride?: string) => {
+  const sendMessage = async (textOverride?: string, options?: { fromVoice?: boolean }) => {
     const text = (textOverride ?? input).trim();
     if (!text || loading) return;
 
@@ -217,6 +217,11 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
       }
 
       await eventRevealChain.current;
+
+      const finalText = stripAgentsHeader(assistantText);
+      if (options?.fromVoice && finalText) {
+        void speak(finalText);
+      }
     } catch {
       setError("Couldn't reach Jugaad. Make sure the backend is running on port 8001.");
       setMessages((prev) => prev.slice(0, -1));
@@ -241,7 +246,7 @@ export default function CoordinatorChat({ fullPage = false, initialMessage = nul
       const text = await toggleListening();
       if (text.trim()) {
         setInput(text);
-        void sendMessage(text);
+        void sendMessage(text, { fromVoice: true });
       }
       return;
     }
