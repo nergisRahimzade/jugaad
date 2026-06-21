@@ -23,7 +23,11 @@ _DOMAIN_FINDERS = {
 }
 
 
-def fetch_live_resources(domain: str, query: str) -> list[dict[str, str]] | None:
+def fetch_live_resources(
+    domain: str,
+    query: str,
+    student_profile: dict | None = None,
+) -> list[dict[str, str]] | None:
     """Run the matching finder and shape its output for the dashboard cards."""
     _ = query  # the finders pull from a curated URL set; the query just routes here
     if not settings.browserbase_api_key:
@@ -31,7 +35,7 @@ def fetch_live_resources(domain: str, query: str) -> list[dict[str, str]] | None
     finder = _DOMAIN_FINDERS.get(domain)
     if finder is None:
         return None
-    payload = finder()
+    payload = finder(student_profile)
     resources = payload.get("resources") or []
     if not resources:
         return None

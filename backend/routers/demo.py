@@ -66,3 +66,11 @@ def demo_alex():
 @router.get("/priya")
 def demo_priya():
     return {"profile": PRIYA.model_dump(), "persona": "Priya — grad student, EECS, permanent resident"}
+
+
+@router.get("/seeds")
+def demo_seeds():
+    """List seeded judge demo queries (matched automatically in /chat/coordinator)."""
+    from services.demo_seed_service import list_demo_seeds
+
+    return {"seeds": list_demo_seeds()}

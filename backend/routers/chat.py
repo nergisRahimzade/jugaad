@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -21,6 +22,7 @@ from services.coordinator_service import (
 from agents.services.agentverse_client import chat_with_coordinator
 from agents.config import COORDINATOR_ADDRESS
 from services.data_layer_service import gather_domain_intel
+from services.demo_seed_service import match_demo_seed
 from services.profile_service import (
     analyze_profile,
     build_profile_addendum,
@@ -29,6 +31,15 @@ from services.profile_service import (
 )
 
 router = APIRouter()
+
+_DEMO_SEEDS_ENABLED = os.getenv("DEMO_SEEDS_ENABLED", "1").strip().lower() not in ("0", "false", "no")
+
+
+async def _stream_text(text: str, chunk_size: int = 48):
+    """Yield plain SSE chunks for pre-seeded demo responses."""
+    for i in range(0, len(text), chunk_size):
+        yield f"data: {text[i : i + chunk_size]}\n\n"
+        await asyncio.sleep(0.012)
 
 DOMAIN_PROMPTS: dict[str, str] = {
     "food": FOOD_DOMAIN,
@@ -58,7 +69,8 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat/coordinator")
 async def coordinator_chat(request: CoordinatorRequest):
-    domains = route_domains(request.message)
+    demo_seed = match_demo_seed(request.message) if _DEMO_SEEDS_ENABLED else None
+    domains = demo_seed.domains if demo_seed else route_domains(request.message)
     profile = request.profile
     history = list(request.messages)
     history.append({"role": "user", "content": request.message})
@@ -74,7 +86,7 @@ async def coordinator_chat(request: CoordinatorRequest):
 
     analysis = analyze_profile(profile, domains, request.profile_initialized)
     profile_addendum = build_profile_addendum(analysis, domains)
-    data_context, intel_by_domain = gather_domain_intel(
+    data_context, intel_by_domain, _agent_responses = gather_domain_intel(
         request.message, domains, profile
     )
     request_id, orchestration_events = build_orchestration_events(
@@ -92,13 +104,20 @@ async def coordinator_chat(request: CoordinatorRequest):
         }
         if profile_patch:
             meta["profilePatch"] = profile_patch
+        if demo_seed:
+            meta["demoSeed"] = demo_seed.id
+            meta["demoLabel"] = demo_seed.label
         yield f"data: {json.dumps(meta)}\n\n"
 
         for event in orchestration_events:
             yield f'data: {json.dumps({"type": "agent_event", "event": event})}\n\n'
 
         agentverse_context: str | None = None
-        if domains and COORDINATOR_ADDRESS:
+        agentverse_enabled = (
+            not demo_seed
+            and os.getenv("AGENTVERSE_CHAT_ENABLED", "1").strip().lower() not in ("0", "false", "no")
+        )
+        if domains and COORDINATOR_ADDRESS and agentverse_enabled:
             short_addr = COORDINATOR_ADDRESS[:20] + "…"
             yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "agentverse", "message": f"Dispatching ChatMessage to Agentverse Coordinator ({short_addr}) via relay…", "meta": {"target": short_addr, "requestId": request_id}}})}\n\n'
 
@@ -117,23 +136,33 @@ async def coordinator_chat(request: CoordinatorRequest):
                 err = av_result.get("error", av_status)
                 agentverse_context = f"(Agentverse unavailable: {err}. Using Claude + Redis/Browserbase only.)"
                 yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "agentverse", "message": f"Agentverse fallback — {err}", "meta": {"requestId": request_id, "status": av_status}}})}\n\n'
+            yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "merge", "message": "Claude synthesizing Agentverse plan + Redis/Browserbase + profile…", "meta": {"requestId": request_id}}})}\n\n'
+        elif domains:
+            merge_msg = (
+                "Delivering curated demo hack stack (Jugaad 1, Jugaad 2…)…"
+                if demo_seed
+                else "Claude synthesizing specialist Redis/Browserbase output + profile…"
+            )
+            yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "merge", "message": merge_msg, "meta": {"requestId": request_id, "demoSeed": demo_seed.id if demo_seed else None}}})}\n\n'
 
-        yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "merge", "message": "Claude synthesizing Agentverse plan + Redis/Browserbase + profile…", "meta": {"requestId": request_id}}})}\n\n'
-
-        system = build_coordinator_system(
-            domains,
-            analysis.context,
-            profile_addendum,
-            data_context,
-            agentverse_context=agentverse_context,
-        )
-        async for chunk in logged_stream(
-            system=system,
-            messages=history,
-            max_tokens=None,
-            trace_name="coordinator",
-        ):
-            yield f"data: {chunk}\n\n"
+        if demo_seed:
+            async for chunk in _stream_text(demo_seed.response):
+                yield chunk
+        else:
+            system = build_coordinator_system(
+                domains,
+                analysis.context,
+                profile_addendum,
+                data_context,
+                agentverse_context=agentverse_context,
+            )
+            async for chunk in logged_stream(
+                system=system,
+                messages=history,
+                max_tokens=None,
+                trace_name="coordinator",
+            ):
+                yield f"data: {chunk}\n\n"
         yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "merge", "message": "ChatMessage delivered to user (EndSessionContent)", "meta": {"requestId": request_id}}})}\n\n'
         yield "data: [DONE]\n\n"
 

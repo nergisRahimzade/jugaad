@@ -132,7 +132,10 @@ CRITICAL FORMAT RULES:
 - Do NOT output an "Agents:" line or list agent names — the UI already shows them.
 - Do NOT repeat the agent names in your opening sentence.
 - Use plain text only (no markdown bold with **).
-- Keep the answer scannable: 2–4 short paragraphs max, then one concrete next step.
+- Write one short paragraph per activated specialist ({", ".join(labels)}), in that order.
+- Each paragraph MUST reflect that agent's LIVE SPECIALIST AGENT OUTPUT below (their Redis hacks, Browserbase crawl, and recommendations).
+- Start each paragraph with the agent role in plain words (e.g. "Food Agent:") so judges can see each agent contributed.
+- End with one concrete next step for the student.
 
 {profile_block}
 
@@ -276,10 +279,12 @@ def build_orchestration_events(
                 "meta": {"requestId": request_id},
             }
         )
-        for intel_event in (intel_events_by_domain or {}).get(domain, []):
+        prior = (intel_events_by_domain or {}).get(domain, [])
+        has_response = any(e.get("type") == "response" for e in prior)
+        for intel_event in prior:
             events.append(intel_event)
 
-        if not (intel_events_by_domain or {}).get(domain):
+        if not prior:
             events.append(
                 {
                     "agentId": domain,
@@ -304,15 +309,16 @@ def build_orchestration_events(
                     }
                 )
 
-        response_wire = f"JUGAAD_RESPONSE|{request_id}|{domain}|{{summary}}||{{recommendations}}"
-        events.append(
-            {
-                "agentId": domain,
-                "type": "response",
-                "message": f"SEND → coordinator  payload: {response_wire}",
-                "meta": {"requestId": request_id, "wire": response_wire},
-            }
-        )
+        if not has_response:
+            response_wire = f"JUGAAD_RESPONSE|{request_id}|{domain}|{{summary}}||{{recommendations}}"
+            events.append(
+                {
+                    "agentId": domain,
+                    "type": "response",
+                    "message": f"SEND → coordinator  payload: {response_wire}",
+                    "meta": {"requestId": request_id, "wire": response_wire},
+                }
+            )
 
     events.append(
         {

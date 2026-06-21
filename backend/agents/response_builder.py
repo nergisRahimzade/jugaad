@@ -27,7 +27,7 @@ def build_domain_response(
     recommendations = search_hacks(domain, user_message) or base["recommendations"]
     resources = list(base["resources"])
 
-    live = fetch_live_resources(domain, user_message)
+    live = fetch_live_resources(domain, user_message, student_profile)
     if live:
         resources = live + resources
 
