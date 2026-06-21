@@ -2,15 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/GeistVF.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "GeistMono";
+  src: url("/fonts/GeistMonoVF.woff") format("woff");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
-  --background: #050810;
-  --foreground: #f0f4ff;
+  --background: #09080f;
+  --foreground: #eeedf5;
   --berkeley-blue: #003262;
   --berkeley-gold: #fdb515;
-  --surface: #0c1220;
-  --surface-elevated: #121a2e;
-  --border: rgba(255, 255, 255, 0.08);
-  --muted: #8892a8;
+  --surface: #0f0e18;
+  --surface-elevated: #161524;
+  --border: rgba(255, 255, 255, 0.07);
+  --muted: #9299ae;
 }
 
 * {
@@ -24,8 +38,9 @@ html {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-serif {
@@ -33,7 +48,7 @@ body {
 }
 
 .font-mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: "GeistMono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 @layer utilities {
@@ -42,17 +57,23 @@ body {
   }
 
   .glass {
-    background: rgba(12, 18, 32, 0.72);
-    backdrop-filter: blur(16px);
+    background: rgba(15, 14, 24, 0.7);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--border);
   }
 
+  .card {
+    background: rgba(15, 14, 24, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+  }
+
   .glow-gold {
-    box-shadow: 0 0 60px rgba(253, 181, 21, 0.15), 0 0 120px rgba(253, 181, 21, 0.05);
+    box-shadow: 0 0 60px rgba(253, 181, 21, 0.12), 0 0 120px rgba(253, 181, 21, 0.04);
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, #fdb515 0%, #ffe082 40%, #60a5fa 100%);
+    background: linear-gradient(135deg, #fdb515 0%, #ffcc55 50%, #a78bfa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -60,25 +81,25 @@ body {
 
   .grid-bg {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 56px 56px;
   }
 
   .noise {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
   }
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
 }
 
@@ -90,7 +111,7 @@ body {
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  50% { transform: translateY(-10px); }
 }
 
 .animate-float {

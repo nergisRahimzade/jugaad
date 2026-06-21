@@ -7,11 +7,11 @@ import { api, StudentProfile, HackStack, HackItem } from "@/lib/api";
 import ApplyNowModal from "./ApplyNowModal";
 
 const DOMAIN_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
-  food:          { icon: "🍎", color: "#34D399", label: "Food" },
+  food:          { icon: "🍎", color: "#34D399", label: "Food & Groceries" },
   housing:       { icon: "🏠", color: "#60A5FA", label: "Housing" },
-  financial_aid: { icon: "💰", color: "#A78BFA", label: "Financial Aid" },
+  financial_aid: { icon: "💰", color: "#A78BFA", label: "Money & Funding" },
   safety:        { icon: "🛡️", color: "#F87171", label: "Safety" },
-  wellness:      { icon: "🧠", color: "#E879F9", label: "Wellness" },
+  wellness:      { icon: "🧠", color: "#E879F9", label: "Mental Health" },
   academic:      { icon: "📚", color: "#38BDF8", label: "Academic" },
 };
 
@@ -100,7 +100,7 @@ function HackCard({
             className="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg transition"
             style={{ background: "rgba(253,181,21,0.12)", color: "#fdb515", border: "1px solid rgba(253,181,21,0.2)" }}
           >
-            Apply Now ✦
+            Apply Now
           </button>
         </div>
       </div>
@@ -147,7 +147,7 @@ function DomainSection({
         <span className="text-xl">{cfg.icon}</span>
         <span className="font-semibold text-white flex-1">{cfg.label}</span>
         {stack && (
-          <span className="text-xs text-white/30 font-mono">{stack.hacks.length} hacks</span>
+          <span className="text-xs text-white/30 font-mono">{stack.hacks.length} resources</span>
         )}
         {expanded ? (
           <ChevronUp className="w-4 h-4 text-white/30" />
@@ -193,7 +193,7 @@ function DomainSection({
                   </div>
                   {stack.stacking_tip && (
                     <div className="rounded-xl border border-white/5 bg-white/2 p-3 mt-2">
-                      <p className="text-xs text-white/40 uppercase tracking-widest font-mono mb-1">Stacking tip</p>
+                      <p className="text-xs text-white/40 uppercase tracking-widest font-mono mb-1">Pro tip</p>
                       <p className="text-sm text-white/70">{stack.stacking_tip}</p>
                     </div>
                   )}
@@ -232,7 +232,7 @@ function ChecklistPanel({ profile }: { profile: StudentProfile }) {
         className="w-full flex items-center gap-3 p-4 hover:bg-white/3 transition text-left"
       >
         <CheckSquare className="w-5 h-5 text-berkeley-gold" />
-        <span className="font-semibold text-white flex-1">First 30 Days Checklist</span>
+        <span className="font-semibold text-white flex-1">Your First 30 Days Action Plan</span>
         {open ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
       </button>
 
@@ -315,7 +315,7 @@ function CalFreshPanel({ profile }: { profile: StudentProfile }) {
       >
         <span className="text-xl">🍎</span>
         <div className="flex-1">
-          <span className="font-semibold text-white">CalFresh Eligibility Checker</span>
+          <span className="font-semibold text-white">CalFresh — up to $292/month in groceries</span>
           {eligible !== null && (
             <span className={`ml-2 text-xs font-semibold ${eligible ? "text-green-400" : "text-white/40"}`}>
               {eligible ? "✓ Likely eligible" : "Not eligible"}
@@ -409,7 +409,7 @@ function DeadlineAlerts({
       <div className="flex items-center gap-2 mb-1">
         <AlertTriangle className="w-4 h-4 text-red-400" />
         <p className="text-sm font-semibold text-red-400">
-          {urgent.length} upcoming deadline{urgent.length > 1 ? "s" : ""} — act now
+          {urgent.length} upcoming deadline{urgent.length > 1 ? "s" : ""} — don&apos;t miss these
         </p>
       </div>
       {urgent.map((a) => (
@@ -450,17 +450,16 @@ export default function RealDashboard({ profile }: { profile: StudentProfile }) 
   return (
     <div className="space-y-4">
       {/* Profile banner */}
-      <div className="glass rounded-2xl p-4 border border-white/5 flex items-center gap-4">
+      <div className="rounded-2xl p-4 border flex items-center gap-4" style={{ background: "rgba(253,181,21,0.04)", border: "1px solid rgba(253,181,21,0.12)" }}>
         <div className="w-10 h-10 rounded-full bg-berkeley-gold/10 border border-berkeley-gold/30 flex items-center justify-center text-lg">
-          🎓
+          👋
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm truncate">
-            {profile.enrollment_status} · {profile.major} · {profile.campus}
+            {profile.major} at {profile.campus}
           </p>
           <p className="text-white/40 text-xs">
-            SAI ${profile.efc_sai} · {profile.housing_situation} · {profile.citizenship}
-            {profile.current_aid.length > 0 && ` · ${profile.current_aid.join(", ")}`}
+            Your personalized resources are below — tap any section to expand
           </p>
         </div>
       </div>

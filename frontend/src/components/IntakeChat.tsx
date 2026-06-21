@@ -28,9 +28,9 @@ function TypingIndicator() {
     <div className="flex items-end gap-3 mb-4">
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
-        style={{ background: "#fdb515", color: "#050810" }}
+        style={{ background: "linear-gradient(135deg, #fdb515, #ffcc55)", color: "#09080f", fontWeight: 700, fontSize: "14px" }}
       >
-        🛠️
+        J
       </div>
       <div className="glass rounded-2xl rounded-bl-sm px-4 py-3">
         <div className="flex gap-1 items-center h-4">
@@ -67,7 +67,7 @@ function ProfileSummary({ profile }: { profile: StudentProfile }) {
       className="glass rounded-2xl p-5 mt-4 border border-white/10"
     >
       <p className="text-xs text-white/40 uppercase tracking-widest mb-3 font-mono">
-        Profile Built
+        Here's what I found
       </p>
       <div className="grid grid-cols-2 gap-2">
         {fields.map(({ label, value }) => (
@@ -165,7 +165,7 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
       {/* Progress bar */}
       <div className="mb-4 px-1">
         <div className="flex justify-between text-xs text-white/30 mb-1.5 font-mono">
-          <span>Building your profile</span>
+          <span>Just a few questions</span>
           <span>{Math.round(progress)}%</span>
         </div>
         <div className="h-0.5 bg-white/10 rounded-full overflow-hidden">
@@ -195,14 +195,14 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
               {msg.role === "assistant" && (
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
-                  style={{ background: "#fdb515", color: "#050810" }}
+                  style={{ background: "linear-gradient(135deg, #fdb515, #ffcc55)", color: "#09080f", fontWeight: 700, fontSize: "14px" }}
                 >
-                  🛠️
+                  J
                 </div>
               )}
               {msg.role === "user" && (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 bg-white/10 border border-white/10">
-                  you
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0" style={{ background: "rgba(167,139,250,0.15)", border: "1px solid rgba(167,139,250,0.25)", color: "#a78bfa", fontWeight: 600 }}>
+                  me
                 </div>
               )}
 
@@ -251,7 +251,7 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.99 }}
           >
-            See my hack stack
+            Show me my resources
             <ArrowRight className="w-4 h-4" />
           </motion.button>
         ) : (
@@ -262,7 +262,7 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder={loading ? "Jugaad is thinking…" : "Type your answer…"}
+              placeholder={loading ? "Thinking…" : "Your answer…"}
               disabled={loading || !!completedProfile}
               className="flex-1 glass rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none border border-white/5 focus:border-white/15 transition-colors disabled:opacity-40"
             />
