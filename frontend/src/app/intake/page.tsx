@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import IntakeChat from "@/components/IntakeChat";
@@ -8,10 +7,8 @@ import { StudentProfile } from "@/lib/api";
 
 export default function IntakePage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<StudentProfile | null>(null);
 
   function handleComplete(p: StudentProfile) {
-    setProfile(p);
     // Store profile in sessionStorage so the dashboard can pick it up
     sessionStorage.setItem("jugaad_profile", JSON.stringify(p));
     router.push("/dashboard");

@@ -14,15 +14,6 @@ interface IntakeChatProps {
   onComplete: (profile: StudentProfile) => void;
 }
 
-const DOMAIN_COLORS: Record<string, string> = {
-  food: "#34D399",
-  housing: "#60A5FA",
-  financial_aid: "#A78BFA",
-  safety: "#F87171",
-  wellness: "#E879F9",
-  academic: "#38BDF8",
-};
-
 function TypingIndicator() {
   return (
     <div className="flex items-end gap-3 mb-4">

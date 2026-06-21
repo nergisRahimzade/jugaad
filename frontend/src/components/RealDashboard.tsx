@@ -6,6 +6,18 @@ import { Loader2, AlertTriangle, Clock, ExternalLink, ChevronDown, ChevronUp, Ch
 import { api, StudentProfile, HackStack, HackItem } from "@/lib/api";
 import ApplyNowModal from "./ApplyNowModal";
 
+interface DeadlineAlert {
+  hack_id: string;
+  hack_name: string;
+  domain: string;
+  deadline: string;
+  days_until: number | null;
+  urgency: string;
+  dollar_value: string | null;
+  url: string | null;
+  effort_level: string;
+}
+
 const DOMAIN_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
   food:          { icon: "🍎", color: "#34D399", label: "Food" },
   housing:       { icon: "🏠", color: "#60A5FA", label: "Housing" },
@@ -381,16 +393,11 @@ function DeadlineAlerts({
 }: {
   profile: StudentProfile;
 }) {
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<DeadlineAlert[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/deadlines", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile }),
-    })
-      .then((r) => r.json())
+    api.deadlines(profile)
       .then((d) => setAlerts(d.alerts ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -418,7 +425,7 @@ function DeadlineAlerts({
           <div className="flex items-center gap-2">
             {a.dollar_value && <span className="text-berkeley-gold">{a.dollar_value}</span>}
             <span className="text-red-400 font-semibold">
-              {a.days_until <= 0 ? "TODAY" : a.days_until <= 2 ? `${a.days_until}d` : `${a.days_until} days`}
+              {(a.days_until ?? 99) <= 0 ? "TODAY" : (a.days_until ?? 99) <= 2 ? `${a.days_until}d` : `${a.days_until} days`}
             </span>
           </div>
         </div>
@@ -431,12 +438,7 @@ export default function RealDashboard({ profile }: { profile: StudentProfile }) 
   const [deadlineMap, setDeadlineMap] = useState<Record<string, { days_until: number | null; urgency: string }>>({});
 
   useEffect(() => {
-    fetch("http://localhost:8000/deadlines", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile }),
-    })
-      .then((r) => r.json())
+    api.deadlines(profile)
       .then((d) => {
         const map: Record<string, { days_until: number | null; urgency: string }> = {};
         for (const a of d.alerts ?? []) {
