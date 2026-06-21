@@ -189,7 +189,7 @@ export function FetchAIDemoSection() {
         <div className="px-6 py-4 border-b border-white/5">
           <h3 className="text-lg font-semibold text-white">Agent Registry</h3>
           <p className="text-sm text-muted mt-1">
-            Register with <code className="text-berkeley-gold font-mono text-xs">python -m agents.register_agents</code> — judges verify on Agentverse
+            Paste code from <code className="text-berkeley-gold font-mono text-xs">backend/agents/hosted/</code> — judges verify on Agentverse
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -198,7 +198,7 @@ export function FetchAIDemoSection() {
               <tr className="border-b border-white/5 text-left text-xs font-mono text-muted uppercase">
                 <th className="px-6 py-3">Agent</th>
                 <th className="px-4 py-3">Domain</th>
-                <th className="px-4 py-3">Port</th>
+                <th className="px-4 py-3">Hosted</th>
                 <th className="px-4 py-3 hidden md:table-cell">Capabilities</th>
                 <th className="px-4 py-3">Protocol</th>
               </tr>
@@ -218,7 +218,7 @@ export function FetchAIDemoSection() {
                   <td className="px-4 py-3 font-mono text-xs" style={{ color: agent.color }}>
                     {agent.id}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-muted">:{agent.port}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted">Agentverse</td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {agent.capabilities.slice(0, 2).map((c) => (

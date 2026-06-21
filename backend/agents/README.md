@@ -1,62 +1,56 @@
 # Fetch.ai Multi-Agent Lead — Person 1
 
-8 agents: **Coordinator + 7 specialists** (Food, Housing, Financial Aid, Scholarship, Wellness, Safety, Academic).
+8 **Agentverse hosted agents**: Coordinator + 7 specialists.
 
-## Quick start
+## Setup (website only — no seeds)
 
-```bash
-cd backend
-source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
+See **`hosted/README.md`** for step-by-step instructions.
 
-# All agents + auto demo
-RUN_DEMO=1 python -m agents.run_bureau
-
-# Manual demo
-python -m agents.demo_client "I need help paying for food."
+```text
+backend/agents/hosted/
+  coordinator/   → agent.py + routing.py + addresses.py + messages.py
+  food/          → agent.py + messages.py
+  housing/       → ...
+  financial_aid/
+  scholarship/
+  wellness/
+  safety/
+  academic/
 ```
 
-**Food demo routes to:** Food + Financial Aid + Scholarship (cross-domain triggers).
+1. Create each agent on [agentverse.ai](https://agentverse.ai)
+2. Paste code from the matching folder
+3. Run each agent on Agentverse
+4. Paste specialist addresses into `coordinator/addresses.py`
+5. Paste all addresses into `backend/.env` for the frontend
+
+## Demo query
+
+Chat with Coordinator on Agentverse:
+
+> I need help paying for food
+
+Routes to Food + Financial Aid + Scholarship → merged survival plan.
+
+## Reference modules (not executed locally)
+
+| File | Purpose |
+|------|---------|
+| `knowledge.py` | Berkeley hacks source text |
+| `routing.py` | Keyword + cross-domain routing |
+| `response_builder.py` | Used by Claude FastAPI layer |
 
 ## Integrations
 
-| Service | Env var | Status |
-|---------|---------|--------|
-| Fetch.ai uAgents | built-in | ✅ Bureau + mailbox |
-| Agentverse | `AGENTVERSE_API_KEY` | Register via `register_agents.py` |
-| ASI:One Pro | `ASI_ONE_API_KEY` | ✅ Personalizes specialist summaries |
-| Band | `BAND_API_KEY`, `BAND_ROOM_ID` | ✅ Shared room + REST fallback |
-| Redis | `REDIS_URL` | ✅ Vector search hook (Person 3 fills data) |
-| Browserbase | `BROWSERBASE_API_KEY` | ✅ Live resource hook (Person 3 wires crawl) |
-
-## Band cross-domain triggers
-
-| Agent detects | Also activates |
-|---------------|----------------|
-| Financial aid stress | Food, Wellness |
-| Food insecurity | Financial Aid, Scholarship |
-| Academic struggle | Wellness, Financial Aid |
-| Wellness stress | Financial Aid |
-
-Band events appear in merged response and terminal logs.
-
-## Agent manifest
-
-| Agent | Domain |
-|-------|--------|
-| Coordinator | routes all queries |
-| Food | food |
-| Housing | housing |
-| Financial Aid | financial_aid |
-| Scholarship | scholarship |
-| Wellness | wellness |
-| Safety | safety |
-| Academic | academic |
+| Service | Env var | Where used |
+|---------|---------|------------|
+| Agentverse | Hosted UI | All 8 agents |
+| ASI:One Pro | `ASI_ONE_API_KEY` | Optional in Agent Secrets |
+| Band / Redis / Browserbase | env vars | Claude layer + future hosted extensions |
 
 ## Sponsor demo (60 sec)
 
-1. Agentverse dashboard — 8 agents with real addresses
-2. `RUN_DEMO=1 python -m agents.run_bureau`
-3. Show logs: Food + Financial Aid + Scholarship + Band room events
-4. Point to merged CalFresh + aid + scholarship plan
+1. Agentverse dashboard — 8 agents with live addresses
+2. Chat with Coordinator: food insecurity query
+3. Show merged multi-domain plan in Agent Logs
+4. Point to cross-domain routing (Food + Financial Aid + Scholarship)

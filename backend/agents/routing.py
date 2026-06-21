@@ -1,17 +1,7 @@
 """Keyword-based routing from user message to specialist domains."""
 
-from .config import (
-    ACADEMIC,
-    FINANCIAL_AID,
-    FOOD,
-    HOUSING,
-    SAFETY,
-    SCHOLARSHIP,
-    WELLNESS,
-)
-
 DOMAIN_KEYWORDS: dict[str, list[str]] = {
-    FOOD.domain: [
+    "food": [
         "food",
         "hungry",
         "groceries",
@@ -22,9 +12,8 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "snack",
         "starving",
         "grocer",
-        "groceries",
     ],
-    HOUSING.domain: [
+    "housing": [
         "housing",
         "rent",
         "homeless",
@@ -37,7 +26,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "landlord",
         "apartment",
     ],
-    FINANCIAL_AID.domain: [
+    "financial_aid": [
         "financial",
         "fafsa",
         "aid",
@@ -52,14 +41,14 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "pell",
         "broke",
     ],
-    SCHOLARSHIP.domain: [
+    "scholarship": [
         "scholarship",
         "scholarships",
         "award",
         "fellowship",
         "micro-scholarship",
     ],
-    WELLNESS.domain: [
+    "wellness": [
         "mental",
         "health",
         "stress",
@@ -74,7 +63,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "overwhelmed",
         "burnout",
     ],
-    SAFETY.domain: [
+    "safety": [
         "safe",
         "safety",
         "walk",
@@ -88,7 +77,7 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
         "telegraph",
         "stacks",
     ],
-    ACADEMIC.domain: [
+    "academic": [
         "class",
         "grade",
         "course",
@@ -106,24 +95,23 @@ DOMAIN_KEYWORDS: dict[str, list[str]] = {
     ],
 }
 
-# Cross-domain triggers (Band + Fetch.ai demo intelligence)
 CROSS_DOMAIN_TRIGGERS: dict[str, list[str]] = {
-    FOOD.domain: [FINANCIAL_AID.domain, SCHOLARSHIP.domain],
-    FINANCIAL_AID.domain: [FOOD.domain, WELLNESS.domain],
-    ACADEMIC.domain: [WELLNESS.domain, FINANCIAL_AID.domain],
-    WELLNESS.domain: [FINANCIAL_AID.domain],
-    SCHOLARSHIP.domain: [FINANCIAL_AID.domain],
-    HOUSING.domain: [FINANCIAL_AID.domain],
+    "food": ["financial_aid", "scholarship"],
+    "financial_aid": ["food", "wellness"],
+    "academic": ["wellness", "financial_aid"],
+    "wellness": ["financial_aid"],
+    "scholarship": ["financial_aid"],
+    "housing": ["financial_aid"],
 }
 
 DOMAIN_PRIORITY = [
-    FOOD.domain,
-    FINANCIAL_AID.domain,
-    SCHOLARSHIP.domain,
-    HOUSING.domain,
-    WELLNESS.domain,
-    SAFETY.domain,
-    ACADEMIC.domain,
+    "food",
+    "financial_aid",
+    "scholarship",
+    "housing",
+    "wellness",
+    "safety",
+    "academic",
 ]
 
 
@@ -137,7 +125,7 @@ def route_domains(message: str) -> list[str]:
     ]
 
     if not matched:
-        return [FOOD.domain, FINANCIAL_AID.domain]
+        return ["food", "financial_aid"]
 
     expanded = set(matched)
     for domain in list(matched):
