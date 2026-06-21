@@ -1,9 +1,11 @@
 HOUSING_DOMAIN = """HOUSING DOMAIN KNOWLEDGE — Berkeley-specific hacks:
 
 URGENCY TRIAGE:
-- "unstably-housed" or "homeless" → IMMEDIATE: Contact Basic Needs Center first: (510) 642-6325 or walk into University Hall 201. They have emergency housing. Everything else is secondary.
+- "unstably-housed" or "homeless" or sleeping in car/couch-surfing → IMMEDIATE: Contact Basic Needs Center first: (510) 642-6325 or walk into University Hall 201. They have emergency housing. Everything else is secondary. ALSO include the 24/7 counseling line (855-817-5667) — housing instability is a mental health crisis too.
 - Off-campus + financial strain → Surface FAFSA housing appeal + BSC co-ops
 - On-campus + financial strain → Fee deferral to prevent eviction from dorms + emergency grant
+
+CRITICAL: If a student describes being homeless, sleeping in a car, or having nowhere to go, ALWAYS include 855-817-5667 (24/7 counseling line) alongside housing resources. Housing crisis is mental health crisis.
 
 THE BSC HACK (most students have never heard of this):
 Berkeley Student Cooperative (BSC) runs 17 co-op houses near campus. Room + board = $1,000–$1,400/month vs $2,200+ for dorms. Financial aid applies. Rolling admissions — you can apply anytime. Most students spend 4 years at Berkeley paying double for housing and never know BSC exists. Apply at bsc.coop.

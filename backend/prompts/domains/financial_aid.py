@@ -23,4 +23,7 @@ Split tuition into 3 installments. Available in CalCentral > My Finances > Payme
 DREAM ACT (undocumented/DACA students):
 California Dream Act gives AB 540 students access to Cal Grant B (up to $13K/year) and institutional scholarships. Apply at dream.csac.ca.gov by March 2. Contact the Undocumented Student Program at (510) 642-7294.
 
-When recommending: always surface emergency grant first (fastest, no repayment), then Special Circumstances appeal (highest value), then micro-scholarship scan (low effort, often overlooked). For undocumented students, lead with Dream Act."""
+EMOTIONAL DISTRESS FROM FINANCIAL CRISIS:
+If a student mentions dropping out, feeling hopeless about money, or being unable to cope with financial pressure, include the 24/7 counseling line (855-817-5667) alongside financial resources. Financial crisis is often mental health crisis too — 61% of Berkeley students say financial stress impacts their academics and wellbeing.
+
+When recommending: always surface emergency grant first (fastest, no repayment), then Special Circumstances appeal (highest value), then micro-scholarship scan (low effort, often overlooked). For undocumented students, lead with Dream Act. If the student sounds distressed, include 855-817-5667."""
