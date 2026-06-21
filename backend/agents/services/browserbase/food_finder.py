@@ -1,10 +1,12 @@
-"""Food Resource Finder — browses Basic Needs Center + CalFresh updates live."""
+"""Food Resource Finder — crawls Basic Needs Center + CalFresh pages."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from .session import run_finder
+from ..redis_cache import check as cache_check, store as cache_store
+from ._schema import RESOURCE_LIST_SCHEMA
+from .session import fetch_json
 
 _FOOD_URLS = [
     "https://basicneeds.berkeley.edu/food-pantry",
@@ -12,27 +14,50 @@ _FOOD_URLS = [
     "https://basicneeds.berkeley.edu/food",
 ]
 
-_INSTRUCTION = (
-    "Extract every live food resource the page mentions: pantry hours, CalFresh "
-    "eligibility rules and deadlines, Grab N Go meal pickups, emergency meal "
-    "swipes, free-food events, and surplus redistribution programs. Include the "
-    "current hours-of-operation when stated."
-)
-
 
 def find_food_resources(student_profile: dict[str, Any] | None = None) -> dict[str, Any]:
-    citizenship = (student_profile or {}).get("citizenship")
-    instruction = _INSTRUCTION
-    if citizenship:
-        instruction += (
-            f" The student's citizenship status is {citizenship} — flag the "
-            "exemption pathway that applies (e.g. CFAP for DACA, ABAWD work "
-            "exemption for half-time + work-study)."
-        )
-    cache_key = f"food:{citizenship or 'any'}"
-    return run_finder(
-        domain="food",
-        urls=_FOOD_URLS,
-        instruction=instruction,
-        cache_key=cache_key,
-    )
+    """Aggregate live food resources for the dashboard.
+
+    We hit three Basic Needs pages in sequence (no need to parallelise for a
+    handful of fetches), deduplicate by name, and return a flat list. Results
+    are semantic-cached so repeated queries from the same demo run skip the
+    paid Browserbase round-trip.
+    """
+    citizenship = (student_profile or {}).get("citizenship") or "any"
+    cache_key = f"jugaad/food/{citizenship}"
+
+    cached = cache_check(cache_key)
+    if cached:
+        return {**cached, "source": "cache"}
+
+    resources: list[dict[str, Any]] = []
+    visited: list[str] = []
+    for url in _FOOD_URLS:
+        payload = fetch_json(url, RESOURCE_LIST_SCHEMA)
+        if not payload:
+            continue
+        visited.append(url)
+        resources.extend(payload.get("resources", []) or [])
+
+    deduped = _dedupe(resources)
+    result: dict[str, Any] = {
+        "domain": "food",
+        "resources": deduped,
+        "visited_urls": visited,
+        "source": "live" if deduped else "empty",
+    }
+    if deduped:
+        cache_store(cache_key, result, metadata={"domain": "food"})
+    return result
+
+
+def _dedupe(resources: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    out: list[dict[str, Any]] = []
+    for r in resources:
+        name = (r.get("name") or "").strip().lower()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        out.append(r)
+    return out

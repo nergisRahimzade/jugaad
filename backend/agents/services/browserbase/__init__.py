@@ -1,25 +1,27 @@
 """Browserbase live-web agents for the Jugaad data layer.
 
-This subpackage owns the Browserbase prize. Each finder agent here drives a real
-Browserbase session against a Berkeley resource portal, hands the rendered text
-to Claude for structured extraction, then caches results into Redis so repeated
-queries skip the (slow, paid) browser round-trip. The session-replay URL is
-surfaced to the frontend so judges can watch the agent actually browse.
+We focus on three high-impact domains: **food**, **housing**, and
+**financial aid** (which absorbs the scholarship use case). Each finder calls
+the Browserbase Fetch API with a JSON schema so the platform itself returns
+structured records — no Playwright session needed for the common path.
 """
 
-from .session import BrowserbaseSession, get_or_create_session, crawl_url, run_finder
+from .session import (
+    fetch_json,
+    fetch_markdown,
+    search_web,
+    create_live_session,
+)
 from .food_finder import find_food_resources
 from .housing_finder import find_housing_resources
-from .scholarship_finder import find_scholarships
-from .wellness_finder import find_wellness_resources
+from .financial_aid_finder import find_financial_aid_resources
 
 __all__ = [
-    "BrowserbaseSession",
-    "get_or_create_session",
-    "crawl_url",
-    "run_finder",
+    "fetch_json",
+    "fetch_markdown",
+    "search_web",
+    "create_live_session",
     "find_food_resources",
     "find_housing_resources",
-    "find_scholarships",
-    "find_wellness_resources",
+    "find_financial_aid_resources",
 ]

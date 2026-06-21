@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from agents.services import redis_cache, redis_memory, redis_realtime
+from agents.services import redis_cache, redis_memory
 from agents.services.redis_seed import seed_if_needed
 from agents.services.redis_store import index_stats
 from core.config import settings
@@ -15,7 +15,6 @@ from routers import (
     contribute,
     demo,
     intake,
-    realtime,
     recommend,
     web_search,
 )
@@ -41,7 +40,6 @@ app.include_router(checklist.router, tags=["checklist"])
 app.include_router(demo.router, prefix="/demo", tags=["demo"])
 app.include_router(contribute.router, tags=["data"])
 app.include_router(web_search.router, tags=["data"])
-app.include_router(realtime.router, prefix="/realtime", tags=["realtime"])
 
 
 @app.on_event("startup")
@@ -61,9 +59,8 @@ def health():
         "model": settings.model_name,
         "data_layer": {
             "redis_vector_index": index_stats(),
-            "semantic_cache": redis_cache.stats(),
+            "langcache": redis_cache.stats(),
             "agent_memory": redis_memory.stats(),
-            "realtime_queues": redis_realtime.stats(),
         },
     }
 

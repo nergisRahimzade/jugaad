@@ -1,160 +1,225 @@
-"""Dual-tier student memory backed by Redis.
+"""Student memory backed by managed Redis Cloud Agent Memory.
 
-Maps to the *Redis Agent Memory Server* design pattern from the Redis prize
-deck — a working/session tier scoped to a single conversation, and a long-term
-profile tier that persists across visits. Implementing this locally first means
-we can plug the official Agent Memory Server REST API in later without changing
-any caller code: the interface here mirrors AMS's ``working_memory`` and
-``long_term_memory`` operations.
+Two tiers, exactly the ones the managed service models for us:
 
-Storage:
+* **Working memory** — session-scoped conversation/intake state. We stash the
+  live intake JSON as a session event so it can be replayed next visit.
+* **Long-term memory** — searchable per-user facts ("qualifies for CalFresh",
+  "off-campus near Telegraph") surfaced semantically on the next visit.
 
-* Session memory — ``HASH`` per ``session_id`` with TTL of 1 hour. Holds the
-  current intake JSON, last user message, and active domain hits.
-* Profile memory — ``HASH`` per ``user_id`` with no TTL. Holds the durable
-  student profile (campus, EFC, citizenship, etc.) and a running set of "facts"
-  Jugaad has learned about them.
+This wraps the official ``redis-agent-memory`` SDK (``AgentMemory``), which talks
+directly to the hosted ``*.memory.redis.io`` service. The service requires a
+``store_id`` alongside the API key — without it the edge rejects every request
+with an nginx 403. The SDK is synchronous, so the FastAPI routes can call us
+directly with no event-loop juggling.
+
+The public surface (``put_session`` / ``get_session`` / ``add_fact`` /
+``search_facts`` / ``stats``) is unchanged so existing callers keep working.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import time
+import uuid
+from datetime import datetime, timezone
+from threading import Lock
 from typing import Any
 
 from core.config import settings
 
-from .redis_schema import profile_namespace, session_namespace
-
 logger = logging.getLogger("jugaad.redis_memory")
 
-_SESSION_TTL_SECONDS = 60 * 60
-_FACTS_FIELD = "facts"
-
+_client_lock = Lock()
 _client: Any | None = None
+_disabled: bool = False
+
+# Actor used for session events that carry raw intake state rather than a real
+# conversational turn. Kept stable so a session round-trips deterministically.
+_SESSION_ACTOR = f"{settings.redis_index_prefix}-session"
 
 
 def _get_client():
-    global _client
+    """Lazily build the managed Agent Memory client.
+
+    Returns ``None`` when the service isn't fully configured (URL + store_id),
+    so callers degrade gracefully instead of raising.
+    """
+    global _client, _disabled
+    if _disabled:
+        return None
     if _client is not None:
         return _client
-    if not settings.redis_url:
+    if not (settings.redis_agent_mem_url and settings.redis_agent_mem_store_id):
+        _disabled = True
         return None
-    try:
-        import redis
+    with _client_lock:
+        if _client is not None:
+            return _client
+        try:
+            from redis_agent_memory import AgentMemory
 
-        client = redis.from_url(settings.redis_url, decode_responses=True)
-        client.ping()
-        _client = client
-        return client
-    except Exception as exc:
-        logger.warning("Redis memory backend unavailable (%s)", exc)
-        return None
+            _client = AgentMemory(
+                settings.redis_agent_mem_url,
+                api_key=settings.redis_agent_mem_api_key or None,
+                store_id=settings.redis_agent_mem_store_id,
+                timeout_ms=15000,
+            )
+            return _client
+        except Exception as exc:
+            logger.warning("Agent Memory client unavailable (%s)", exc)
+            _disabled = True
+            return None
 
 
-def _session_key(session_id: str) -> str:
-    return f"{session_namespace.prefix}:{session_id}"
+def _message_role():
+    from redis_agent_memory import models as m
+
+    return m.MessageRole
 
 
-def _profile_key(user_id: str) -> str:
-    return f"{profile_namespace.prefix}:{user_id}"
+# ---------------------------------------------------------------------------
+# Working memory (session)
+# ---------------------------------------------------------------------------
 
 
 def put_session(session_id: str, payload: dict[str, Any]) -> bool:
-    """Overwrite the working memory for a session."""
-    client = _get_client()
-    if client is None:
-        return False
-    key = _session_key(session_id)
-    flat = {k: json.dumps(v) for k, v in payload.items()}
-    flat["_updated_at"] = str(int(time.time()))
-    pipe = client.pipeline()
-    pipe.delete(key)
-    if flat:
-        pipe.hset(key, mapping=flat)
-        pipe.expire(key, _SESSION_TTL_SECONDS)
-    pipe.execute()
-    return True
+    """Persist a session's working-memory payload as a session event.
 
-
-def update_session(session_id: str, partial: dict[str, Any]) -> bool:
-    """Merge keys into the session hash (e.g. add the latest user message)."""
-    client = _get_client()
-    if client is None:
-        return False
-    key = _session_key(session_id)
-    flat = {k: json.dumps(v) for k, v in partial.items()}
-    flat["_updated_at"] = str(int(time.time()))
-    client.hset(key, mapping=flat)
-    client.expire(key, _SESSION_TTL_SECONDS)
-    return True
-
-
-def get_session(session_id: str) -> dict[str, Any]:
-    client = _get_client()
-    if client is None:
-        return {}
-    raw = client.hgetall(_session_key(session_id))
-    return {k: _try_json(v) for k, v in raw.items()}
-
-
-def put_profile(user_id: str, profile: dict[str, Any]) -> bool:
-    """Persist the long-term student profile.
-
-    Only the keys we know about are written; this keeps the durable profile from
-    accumulating one-off junk from a noisy intake.
+    The managed service models working memory as a stream of events, so we
+    serialise the intake dict into one USER event. :func:`get_session` reverses
+    this to return the original dict.
     """
     client = _get_client()
     if client is None:
         return False
-    key = _profile_key(user_id)
-    flat = {k: json.dumps(v) for k, v in profile.items()}
-    flat["_updated_at"] = str(int(time.time()))
-    client.hset(key, mapping=flat)
-    return True
+    try:
+        client.add_session_event(
+            actor_id=_SESSION_ACTOR,
+            session_id=session_id,
+            role=_message_role().USER,
+            content=[{"text": json.dumps(payload, default=str)}],
+            created_at=datetime.now(timezone.utc),
+        )
+        return True
+    except Exception as exc:
+        logger.warning("AMS add_session_event(%s) failed: %s", session_id, exc)
+        return False
 
 
-def get_profile(user_id: str) -> dict[str, Any]:
+def get_session(session_id: str) -> dict[str, Any]:
+    """Return the most recent working-memory payload for ``session_id``.
+
+    We read the session's events and parse the latest one that round-trips as
+    JSON (i.e. was written by :func:`put_session`).
+    """
     client = _get_client()
     if client is None:
         return {}
-    raw = client.hgetall(_profile_key(user_id))
-    return {k: _try_json(v) for k, v in raw.items()}
+    try:
+        from redis_agent_memory.errors import NotFoundErrorResponseContent
+
+        try:
+            saved = client.get_session_memory(session_id=session_id)
+        except NotFoundErrorResponseContent:
+            return {}
+    except Exception as exc:
+        logger.warning("AMS get_session_memory(%s) failed: %s", session_id, exc)
+        return {}
+
+    events = getattr(saved, "events", None) or []
+    for event in reversed(events):
+        content = getattr(event, "content", None) or []
+        if not content:
+            continue
+        text = getattr(content[0], "text", None)
+        if not text:
+            continue
+        try:
+            parsed = json.loads(text)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+    return {}
 
 
-def add_fact(user_id: str, fact: str) -> bool:
-    """Append a discovered fact (e.g. "qualifies for CalFresh") to the profile."""
+# ---------------------------------------------------------------------------
+# Long-term memory (per-user facts)
+# ---------------------------------------------------------------------------
+
+
+def add_fact(user_id: str, fact: str, *, topics: list[str] | None = None) -> bool:
     client = _get_client()
     if client is None:
         return False
-    key = _profile_key(user_id)
-    raw = client.hget(key, _FACTS_FIELD)
-    facts: list[str] = json.loads(raw) if raw else []
-    if fact not in facts:
-        facts.append(fact)
-    client.hset(key, _FACTS_FIELD, json.dumps(facts))
-    return True
-
-
-def _try_json(value: str) -> Any:
+    memory: dict[str, Any] = {
+        "id": uuid.uuid4().hex,
+        "owner_id": user_id,
+        "text": fact,
+    }
+    if topics:
+        memory["topics"] = topics
     try:
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError):
-        return value
+        client.bulk_create_long_term_memories(memories=[memory])
+        return True
+    except Exception as exc:
+        # Retry without optional topics if the service rejects the extra field.
+        if topics:
+            memory.pop("topics", None)
+            try:
+                client.bulk_create_long_term_memories(memories=[memory])
+                return True
+            except Exception as exc2:
+                logger.warning("AMS create_long_term_memory retry failed: %s", exc2)
+                return False
+        logger.warning("AMS create_long_term_memory failed: %s", exc)
+        return False
+
+
+def search_facts(user_id: str, query: str, *, limit: int = 5) -> list[dict[str, Any]]:
+    client = _get_client()
+    if client is None:
+        return []
+    try:
+        result = client.search_long_term_memory(
+            request={
+                "text": query,
+                "limit": limit,
+                "filter": {"ownerId": {"eq": user_id}},
+            }
+        )
+    except Exception as exc:
+        logger.warning("AMS search_long_term_memory failed: %s", exc)
+        return []
+    items = getattr(result, "items", None) or []
+    return [_coerce_dict(item) for item in items]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _coerce_dict(obj: Any) -> dict[str, Any]:
+    if obj is None:
+        return {}
+    if isinstance(obj, dict):
+        return obj
+    for method in ("model_dump", "dict"):
+        if hasattr(obj, method):
+            try:
+                return getattr(obj, method)()
+            except Exception:
+                pass
+    text = getattr(obj, "text", None)
+    return {"text": text} if text is not None else {}
 
 
 def stats() -> dict[str, Any]:
-    client = _get_client()
-    if client is None:
-        return {"available": False}
-    try:
-        session_count = sum(1 for _ in client.scan_iter(match=f"{session_namespace.prefix}:*", count=200))
-        profile_count = sum(1 for _ in client.scan_iter(match=f"{profile_namespace.prefix}:*", count=200))
-    except Exception:
-        session_count = profile_count = 0
     return {
-        "available": True,
-        "active_sessions": session_count,
-        "stored_profiles": profile_count,
+        "available": _get_client() is not None,
+        "namespace": settings.redis_index_prefix,
+        "base_url": settings.redis_agent_mem_url or None,
+        "store_id": settings.redis_agent_mem_store_id or None,
     }

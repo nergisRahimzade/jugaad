@@ -1,10 +1,9 @@
-"""Shared services for Redis, Browserbase, Band, and ASI:One.
+"""Shared services for the Jugaad data layer.
 
-The Person 3 data layer exposes four Redis modules — ``redis_store`` for the
-RedisVL vector index, ``redis_cache`` for the semantic LLM cache,
-``redis_memory`` for dual-tier student memory, and ``redis_realtime`` for the
-food-surplus + walking-buddy + problem-map queues — plus a ``browserbase``
-subpackage that drives live Berkeley site crawls.
+Scope is intentionally narrow: a RedisVL vector index over the hack knowledge
+graph (``redis_store``), a managed LangCache wrapper (``redis_cache``), a
+managed Agent Memory Server wrapper (``redis_memory``), and a Browserbase
+subpackage that powers food / housing / financial-aid live crawls.
 """
 
-from . import redis_cache, redis_memory, redis_realtime, redis_seed, redis_store  # noqa: F401
+from . import redis_cache, redis_memory, redis_seed, redis_store  # noqa: F401
