@@ -8,6 +8,7 @@ from core.arize_logger import logged_complete
 _sessions: dict[str, IntakeSession] = {}
 
 MIN_QUESTIONS = 6
+MAX_QUESTIONS = 10  # Force extraction with defaults if conversation runs long
 
 
 def start_session() -> tuple[str, str]:
@@ -47,6 +48,20 @@ def continue_session(session_id: str, answer: str) -> dict:
         result = _try_extract(session)
         if result:
             return result
+
+    # Hard cap — force complete with whatever we have so the user isn't stuck
+    if session.questions_asked >= MAX_QUESTIONS:
+        profile = StudentProfile()  # defaults
+        session.profile = profile
+        session.is_complete = True
+        completion_msg = "Got it — I've built your profile. Let me pull up everything you qualify for."
+        session.messages.append({"role": "assistant", "content": completion_msg})
+        return {
+            "message": completion_msg,
+            "is_complete": True,
+            "profile": profile.model_dump(),
+            "questions_asked": session.questions_asked,
+        }
 
     # Ask next question
     response = logged_complete(
@@ -90,10 +105,15 @@ def _try_extract(session: IntakeSession) -> dict | None:
 
     try:
         clean = raw.strip()
-        if clean.startswith("```"):
-            clean = clean.split("```")[1]
-            if clean.startswith("json"):
-                clean = clean[4:]
+        # Strip any markdown code fences (```json, ```, etc.)
+        if "```" in clean:
+            # Extract content between first and last fence
+            parts = clean.split("```")
+            # parts[1] is the block after the first ```, strip optional language tag
+            block = parts[1]
+            if block.startswith("json"):
+                block = block[4:]
+            clean = block.strip()
         profile_data = json.loads(clean)
         profile = StudentProfile(**profile_data)
         session.profile = profile
