@@ -1,4 +1,4 @@
-import { CROSS_DOMAIN_TRIGGERS } from "./agents";
+import { AGENTS, CROSS_DOMAIN_TRIGGERS } from "./agents";
 import type {
   AgentDomain,
   AgentEvent,
@@ -110,6 +110,10 @@ const RESPONSES: Record<string, Omit<AgentResponse, "domain" | "agentName">> = {
   },
 };
 
+function agentAddress(domain: string): string {
+  return AGENTS.find((a) => a.id === domain)?.address ?? `agent1q…${domain.slice(0, 4)}`;
+}
+
 function routeDomains(message: string): AgentDomain[] {
   const text = message.toLowerCase();
   const matched = Object.entries(DOMAIN_KEYWORDS)
@@ -138,6 +142,7 @@ export async function simulateDemo(
   const events: AgentEvent[] = [];
   const bandEvents: BandEvent[] = [];
   const routedDomains = routeDomains(query);
+  const requestId = uid();
 
   const push = (event: Omit<AgentEvent, "id" | "timestamp">) => {
     const full: AgentEvent = { ...event, id: uid(), timestamp: Date.now() };
@@ -146,67 +151,94 @@ export async function simulateDemo(
   };
 
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const short = query.slice(0, 55) + (query.length > 55 ? "…" : "");
 
   push({
     agentId: "coordinator",
     type: "route",
-    message: `Received query via Fetch.ai mailbox protocol: "${query.slice(0, 60)}${query.length > 60 ? "…" : ""}"`,
+    message: `RECV ChatMessage from user: "${short}"`,
+    meta: { protocol: "ChatMessage" },
   });
   await delay(400);
 
+  const matched = Object.entries(DOMAIN_KEYWORDS)
+    .filter(([, keywords]) => keywords.some((k) => query.toLowerCase().includes(k)))
+    .map(([domain]) => domain);
+  const crossAdded = routedDomains.filter((d) => !matched.includes(d));
+
   push({
     agentId: "coordinator",
     type: "route",
-    message: `Keyword routing → activating ${routedDomains.length} specialists: ${routedDomains.join(", ")}`,
-    meta: { domains: routedDomains.join(", ") },
+    message: `Keyword match: [${matched.join(", ") || "none"}] → activating ${routedDomains.length} specialists: ${routedDomains.join(", ")}`,
+    meta: { domains: routedDomains.join(", "), requestId },
   });
   await delay(300);
 
-  push({
-    agentId: "coordinator",
-    type: "info",
-    message: "Created Band shared room session for cross-agent context",
-  });
-  await delay(200);
+  if (crossAdded.length > 0) {
+    push({
+      agentId: "coordinator",
+      type: "band",
+      message: `Band cross-domain triggers expanded routing → also activated: ${crossAdded.join(", ")}`,
+      meta: { triggers: crossAdded.join(", ") },
+    });
+    await delay(200);
+  }
 
   for (const domain of routedDomains) {
+    const addr = agentAddress(domain);
+    const wire = `JUGAAD_QUERY|${requestId}|${short}`;
+
     push({
-      agentId: domain,
+      agentId: "coordinator",
       type: "query",
-      message: `JugaadQuery received from Coordinator — processing domain: ${domain}`,
+      message: `SEND ChatMessage → ${addr}  payload: ${wire}`,
+      meta: { to: addr, requestId, wire },
     });
     await delay(350);
 
     push({
       agentId: domain,
+      type: "query",
+      message: `RECV JugaadQuery (request_id=${requestId}) — processing ${domain} domain`,
+      meta: { requestId },
+    });
+    await delay(300);
+
+    push({
+      agentId: domain,
       type: "search",
-      message: `Querying Redis vector search + Browserbase live crawl for ${domain} resources`,
+      message: "Querying Redis vector search + Berkeley domain knowledge base",
     });
     await delay(500);
 
     const bandMeta = CROSS_DOMAIN_TRIGGERS[domain];
-    if (bandMeta) {
-      const bandEvent: BandEvent = {
-        agent: domain,
-        insight: bandMeta.insight,
-        triggers: bandMeta.triggers,
-        summary: RESPONSES[domain]?.summary.slice(0, 80) ?? "",
-      };
-      bandEvents.push(bandEvent);
+    if (bandMeta && matched.includes(domain)) {
+      const linked = bandMeta.triggers.filter((t) => routedDomains.includes(t as AgentDomain));
+      if (linked.length > 0) {
+        const bandEvent: BandEvent = {
+          agent: domain,
+          insight: bandMeta.insight,
+          triggers: bandMeta.triggers,
+          summary: RESPONSES[domain]?.summary.slice(0, 80) ?? "",
+        };
+        bandEvents.push(bandEvent);
 
-      push({
-        agentId: domain,
-        type: "band",
-        message: `Band room: "${bandMeta.insight}" → triggered ${bandMeta.triggers.join(", ")}`,
-        meta: { triggers: bandMeta.triggers.join(", ") },
-      });
-      await delay(300);
+        push({
+          agentId: domain,
+          type: "band",
+          message: `Band room insight: "${bandMeta.insight}" → notified ${linked.join(", ")}`,
+          meta: { triggers: linked.join(", ") },
+        });
+        await delay(300);
+      }
     }
 
+    const responseWire = `JUGAAD_RESPONSE|${requestId}|${domain}|{summary}||{recommendations}`;
     push({
       agentId: domain,
       type: "response",
-      message: `JugaadResponse sent to Coordinator (${RESPONSES[domain]?.recommendations.length ?? 0} recommendations)`,
+      message: `SEND → coordinator  payload: ${responseWire}`,
+      meta: { requestId, wire: responseWire },
     });
     await delay(250);
   }
@@ -214,7 +246,8 @@ export async function simulateDemo(
   push({
     agentId: "coordinator",
     type: "merge",
-    message: `All ${routedDomains.length} specialist responses received — merging into personalized plan`,
+    message: `All ${routedDomains.length}/${routedDomains.length} JugaadResponses received — merging into personalized plan`,
+    meta: { requestId },
   });
   await delay(400);
 
@@ -229,7 +262,8 @@ export async function simulateDemo(
   push({
     agentId: "coordinator",
     type: "merge",
-    message: "Merged plan delivered via ChatMessage protocol (EndSessionContent)",
+    message: "ChatMessage delivered to user (EndSessionContent)",
+    meta: { requestId },
   });
 
   return { query, routedDomains, events, bandEvents, responses, mergedPlan };
@@ -251,7 +285,7 @@ function buildMergedPlan(
   ];
 
   if (bandEvents.length > 0) {
-    lines.push("### Cross-Agent Intelligence (Band + Fetch.ai uAgents)");
+    lines.push("### Cross-Agent Intelligence");
     for (const e of bandEvents) {
       lines.push(`• ${e.agent}: ${e.insight} → activated ${e.triggers.join(", ")}`);
     }
@@ -259,8 +293,7 @@ function buildMergedPlan(
   }
 
   lines.push(
-    "Agents collaborated via Fetch.ai uAgents mailbox protocol + Band shared room.",
-    "Verify live agent addresses on Agentverse dashboard."
+    "Agents collaborated via coordinator routing + cross-domain triggers.",
   );
 
   return lines.join("\n");

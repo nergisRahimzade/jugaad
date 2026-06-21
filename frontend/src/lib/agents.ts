@@ -8,8 +8,9 @@ export const AGENTS: AgentDefinition[] = [
     port: 8000,
     color: "#FDB515",
     icon: "🎯",
-    description: "Receives student problems on Agentverse, routes to specialist hosted agents, and merges responses.",
+    description: "Receives student problems, routes to specialist agents, and merges responses.",
     capabilities: ["Intent classification", "Multi-agent routing", "Response merging", "Chat protocol handler"],
+    address: "agent1q0coord…jugaad",
   },
   {
     id: "food",
@@ -20,6 +21,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "🍎",
     description: "CalFresh stacking strategies, food pantry hours, free food calendar, and real-time surplus network.",
     capabilities: ["CalFresh eligibility", "Pantry stacking", "Surplus matching", "Browserbase live crawl"],
+    address: "agent1q0food…8k2m",
   },
   {
     id: "housing",
@@ -30,6 +32,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "🏠",
     description: "BSC co-op discovery, rent control rights, lease red-flag scanning, and emergency bridge housing.",
     capabilities: ["Co-op matching", "Rent control", "Lease analysis", "Emergency housing"],
+    address: "agent1q0hous…3n7p",
   },
   {
     id: "financial_aid",
@@ -40,6 +43,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "💰",
     description: "Special Circumstances appeals, emergency loans, fee payment plans, and FAFSA pause guidance.",
     capabilities: ["Appeal drafting", "Emergency loans", "Fee plans", "Aid recalculation"],
+    address: "agent1q0fina…9x1q",
   },
   {
     id: "safety",
@@ -50,6 +54,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "🛡️",
     description: "Real-time walking buddy matching, safe route recommendations, and SafeWalk on-demand.",
     capabilities: ["Buddy matching", "Route analysis", "SafeWalk requests", "Incident data"],
+    address: "agent1q0safe…2y3z",
   },
   {
     id: "academic",
@@ -60,6 +65,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "📚",
     description: "Enrollment strategies, BerkeleyTime pattern analysis, study group matching, and prerequisite checks.",
     capabilities: ["Enrollment strategy", "BerkeleyTime data", "Study groups", "Prerequisite check"],
+    address: "agent1q0acad…7h4j",
   },
   {
     id: "wellness",
@@ -70,6 +76,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "🧠",
     description: "Let's Talk drop-ins, SHIP therapist bypass, urgent CAPS pathway, and peer support matching.",
     capabilities: ["Let's Talk finder", "SHIP providers", "Urgent CAPS", "Peer circles"],
+    address: "agent1q0well…6t5v",
   },
   {
     id: "scholarship",
@@ -80,6 +87,7 @@ export const AGENTS: AgentDefinition[] = [
     icon: "🎓",
     description: "Micro-scholarship scan across departments, cultural centers, and foundations with few applicants.",
     capabilities: ["Micro-scholarship scan", "Deadline tracking", "Essay reuse", "Department awards"],
+    address: "agent1q0schl…4w8r",
   },
 ];
 

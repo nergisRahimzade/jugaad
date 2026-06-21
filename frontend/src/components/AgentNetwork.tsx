@@ -10,6 +10,15 @@ interface AgentNetworkProps {
   highlightCoordinator?: boolean;
 }
 
+const STATUS_LABEL: Record<AgentStatus, string> = {
+  idle: "idle",
+  routing: "routing",
+  thinking: "processing",
+  searching: "searching",
+  responding: "responding",
+  done: "done",
+};
+
 export function AgentNetwork({
   activeAgents = [],
   statuses = {},
@@ -21,90 +30,147 @@ export function AgentNetwork({
   const isActive = (id: AgentDomain) => activeAgents.includes(id);
   const status = (id: AgentDomain) => statuses[id] ?? (isActive(id) ? "thinking" : "idle");
 
-  const statusColor: Record<AgentStatus, string> = {
-    idle: "bg-white/10 border-white/10",
-    routing: "bg-berkeley-gold/20 border-berkeley-gold/50 animate-pulse",
-    thinking: "bg-blue-500/20 border-blue-400/50 animate-pulse",
-    searching: "bg-purple-500/20 border-purple-400/50 animate-pulse",
-    responding: "bg-emerald-500/20 border-emerald-400/50 animate-pulse",
-    done: "bg-emerald-500/10 border-emerald-400/30",
-  };
+  const coordinatorActive = highlightCoordinator || isActive("coordinator");
+  const coordinatorStatus = status("coordinator");
 
   return (
-    <div className="relative w-full aspect-square max-w-lg mx-auto">
-      {/* Connection lines SVG */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
-        {specialists.map((agent, i) => {
-          const angle = (i / specialists.length) * Math.PI * 2 - Math.PI / 2;
-          const x = 200 + Math.cos(angle) * 140;
-          const y = 200 + Math.sin(angle) * 140;
-          const active = isActive(agent.id);
-          return (
-            <line
-              key={agent.id}
-              x1="200"
-              y1="200"
-              x2={x}
-              y2={y}
-              stroke={active ? agent.color : "rgba(255,255,255,0.06)"}
-              strokeWidth={active ? 2 : 1}
-              strokeDasharray={active ? "none" : "4 4"}
-              opacity={active ? 0.8 : 0.4}
-            />
-          );
-        })}
-      </svg>
-
-      {/* Coordinator center */}
+    <div className="w-full space-y-3">
+      {/* Coordinator hub */}
       <motion.div
-        className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10`}
-        animate={highlightCoordinator || isActive("coordinator") ? { scale: [1, 1.05, 1] } : {}}
-        transition={{ repeat: Infinity, duration: 2 }}
+        animate={coordinatorActive ? { scale: [1, 1.01, 1] } : {}}
+        transition={{ repeat: coordinatorActive ? Infinity : 0, duration: 2 }}
+        className="rounded-xl border px-4 py-3 flex items-center gap-3"
+        style={{
+          borderColor: coordinatorActive ? `${coordinator.color}66` : "rgba(255,255,255,0.08)",
+          background: coordinatorActive ? `${coordinator.color}12` : "rgba(255,255,255,0.03)",
+          boxShadow: coordinatorActive ? `0 0 24px ${coordinator.color}20` : undefined,
+        }}
       >
-        <div
-          className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-4 py-3 min-w-[100px] ${statusColor[status("coordinator")]}`}
-          style={{ borderColor: coordinator.color + "80" }}
-        >
-          <span className="text-2xl">{coordinator.icon}</span>
-          <span className="text-xs font-semibold text-white">{coordinator.displayName}</span>
-          <span className="text-[10px] font-mono text-muted">:8000</span>
+        <span className="text-2xl shrink-0">{coordinator.icon}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-white">{coordinator.displayName}</span>
+            <span className="text-[10px] font-mono text-white/35">:{coordinator.port}</span>
+          </div>
+          <div className="mt-2 h-2 rounded-full bg-white/[0.06] overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: coordinator.color }}
+              initial={{ width: "0%" }}
+              animate={{ width: coordinatorActive ? "100%" : "18%" }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
         </div>
+        <StatusPill status={coordinatorStatus} color={coordinator.color} active={coordinatorActive} />
       </motion.div>
 
-      {/* Specialist nodes */}
-      {specialists.map((agent, i) => {
-        const angle = (i / specialists.length) * Math.PI * 2 - Math.PI / 2;
-        const x = 50 + Math.cos(angle) * 35;
-        const y = 50 + Math.sin(angle) * 35;
-        const active = isActive(agent.id);
-
-        return (
-          <motion.div
-            key={agent.id}
-            className="absolute -translate-x-1/2 -translate-y-1/2"
-            style={{ left: `${x}%`, top: `${y}%` }}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: active ? 1.08 : 1 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <div
-              className={`flex flex-col items-center gap-0.5 rounded-xl border px-2.5 py-2 min-w-[72px] transition-all ${statusColor[status(agent.id)]}`}
-              style={active ? { boxShadow: `0 0 20px ${agent.color}40` } : {}}
-            >
-              <span className="text-lg">{agent.icon}</span>
-              <span className="text-[10px] font-medium text-white text-center leading-tight">
-                {agent.displayName.replace(" Agent", "")}
-              </span>
-              <span className="text-[9px] font-mono text-muted">:{agent.port}</span>
-            </div>
-          </motion.div>
-        );
-      })}
-
-      {/* Fetch.ai badge */}
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 glass rounded-full px-4 py-1.5 text-[10px] font-mono text-muted whitespace-nowrap">
-        Fetch.ai uAgents · Bureau · Agentverse · testnet
+      {/* Connector label */}
+      <div className="flex items-center gap-2 px-1">
+        <div className="h-px flex-1 bg-white/[0.06]" />
+        <span className="text-[10px] font-mono uppercase tracking-wider text-white/25 shrink-0">
+          routes to
+        </span>
+        <div className="h-px flex-1 bg-white/[0.06]" />
       </div>
+
+      {/* Specialist bars */}
+      <div className="space-y-2">
+        {specialists.map((agent, i) => {
+          const active = isActive(agent.id);
+          const agentStatus = status(agent.id);
+          const fillPct = active
+            ? agentStatus === "done"
+              ? 100
+              : agentStatus === "responding"
+                ? 90
+                : agentStatus === "searching"
+                  ? 65
+                  : agentStatus === "thinking"
+                    ? 45
+                    : 30
+            : 0;
+
+          return (
+            <motion.div
+              key={agent.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              className="rounded-lg border px-3 py-2.5 flex items-center gap-3 transition-colors"
+              style={{
+                borderColor: active ? `${agent.color}44` : "rgba(255,255,255,0.05)",
+                background: active ? `${agent.color}0a` : "rgba(255,255,255,0.02)",
+              }}
+            >
+              <span className="text-lg w-7 text-center shrink-0">{agent.icon}</span>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span
+                    className="text-xs font-medium truncate"
+                    style={{ color: active ? agent.color : "rgba(255,255,255,0.55)" }}
+                  >
+                    {agent.displayName.replace(" Agent", "")}
+                  </span>
+                  <span className="text-[10px] font-mono text-white/30 shrink-0">:{agent.port}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{
+                      background: active ? agent.color : "rgba(255,255,255,0.12)",
+                      boxShadow: active ? `0 0 8px ${agent.color}60` : undefined,
+                    }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${fillPct}%` }}
+                    transition={{ duration: 0.45, ease: "easeOut" }}
+                  />
+                </div>
+              </div>
+
+              <StatusPill status={agentStatus} color={agent.color} active={active} compact />
+            </motion.div>
+          );
+        })}
+      </div>
+
+      <p className="text-center text-[10px] font-mono text-white/25 pt-1">
+        8 agents · coordinator hub · cross-domain routing
+      </p>
     </div>
+  );
+}
+
+function StatusPill({
+  status,
+  color,
+  active,
+  compact = false,
+}: {
+  status: AgentStatus;
+  color: string;
+  active: boolean;
+  compact?: boolean;
+}) {
+  if (!active && status === "idle") {
+    return (
+      <span className={`shrink-0 rounded-full bg-white/[0.04] text-white/25 font-mono ${compact ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-0.5"}`}>
+        idle
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`shrink-0 rounded-full font-mono capitalize ${compact ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-0.5"} ${status !== "idle" && status !== "done" ? "animate-pulse" : ""}`}
+      style={{
+        background: `${color}18`,
+        color,
+        border: `1px solid ${color}44`,
+      }}
+    >
+      {STATUS_LABEL[status]}
+    </span>
   );
 }

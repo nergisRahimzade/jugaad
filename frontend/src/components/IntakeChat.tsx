@@ -79,7 +79,7 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [questionsAsked, setQuestionsAsked] = useState(0);
-  const [totalQuestions] = useState(7);
+  const [totalQuestions] = useState(8);
   const [completedProfile, setCompletedProfile] = useState<StudentProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);

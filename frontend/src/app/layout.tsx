@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Navbar } from "@/components/Navbar";
+import { MainContent } from "@/components/MainContent";
+import { AppStateProvider } from "@/context/AppStateContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,8 +30,10 @@ export default function RootLayout({
           <div className="absolute top-1/2 left-0 w-[400px] h-[400px] rounded-full"
             style={{ background: "radial-gradient(ellipse, rgba(52,211,153,0.04) 0%, transparent 70%)" }} />
         </div>
-        <Navbar />
-        <main className="relative pt-16">{children}</main>
+        <AppStateProvider>
+          <Navbar />
+          <MainContent>{children}</MainContent>
+        </AppStateProvider>
       </body>
     </html>
   );

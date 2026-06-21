@@ -27,7 +27,7 @@ RULES:
 
 EXTRACTION_PROMPT = """Based on the conversation below, extract the student's profile as a JSON object.
 
-Return ONLY valid JSON with these exact fields. Use null for unknown values. Use reasonable defaults where information was skipped.
+Return ONLY valid JSON with these exact fields. Use "unknown" for citizenship if it was not discussed or the student skipped it. Use reasonable defaults for other skipped fields.
 
 Required fields:
 {
@@ -36,7 +36,7 @@ Required fields:
   "efc_sai": 0,
   "housing_situation": "off-campus",
   "meal_plan": "none",
-  "citizenship": "US citizen",
+  "citizenship": "unknown",
   "current_aid": [],
   "dependents": 0,
   "major": "Undecided",

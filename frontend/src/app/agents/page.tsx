@@ -1,8 +1,8 @@
 import { FetchAIDemoSection } from "@/components/FetchAIDemoSection";
 
 export const metadata = {
-  title: "Fetch.ai Agents — Jugaad",
-  description: "8 uAgents on Agentverse: Coordinator + 7 specialists with Band cross-domain intelligence",
+  title: "How It Works — Jugaad",
+  description: "Live multi-agent orchestration: coordinator + 7 specialists with cross-domain routing",
 };
 
 export default function AgentsPage() {

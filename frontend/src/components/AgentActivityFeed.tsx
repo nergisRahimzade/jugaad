@@ -19,12 +19,14 @@ interface AgentActivityFeedProps {
   events: AgentEvent[];
   maxHeight?: string;
   title?: string;
+  highlightProtocol?: boolean;
 }
 
 export function AgentActivityFeed({
   events,
   maxHeight = "400px",
   title = "Agent Activity Feed",
+  highlightProtocol = false,
 }: AgentActivityFeedProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +35,7 @@ export function AgentActivityFeed({
   }, [events.length]);
 
   return (
-    <div className="glass rounded-2xl overflow-hidden flex flex-col">
+    <div className={`glass rounded-2xl overflow-hidden flex flex-col ${maxHeight === "flex" ? "flex-1 min-h-0" : ""}`}>
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
@@ -45,7 +47,12 @@ export function AgentActivityFeed({
         <span className="text-xs font-mono text-muted">{events.length} events</span>
       </div>
 
-      <div className="overflow-y-auto p-3 space-y-2 font-mono text-xs" style={{ maxHeight }}>
+      <div
+        className={`overflow-y-auto p-3 space-y-2 font-mono text-xs ${
+          maxHeight === "flex" ? "flex-1 min-h-[180px]" : ""
+        }`}
+        style={maxHeight !== "flex" ? { maxHeight } : undefined}
+      >
         <AnimatePresence initial={false}>
           {events.length === 0 ? (
             <p className="text-muted text-center py-8 text-sm font-sans">
@@ -74,7 +81,13 @@ export function AgentActivityFeed({
                   <span className="shrink-0" style={{ color: agent?.color }}>
                     [{agent?.displayName ?? event.agentId}]
                   </span>
-                  <span className="text-white/80 break-all">{event.message}</span>
+                  <span className="text-white/80 break-all">
+                    {highlightProtocol ? (
+                      <ProtocolMessage text={event.message} />
+                    ) : (
+                      event.message
+                    )}
+                  </span>
                 </motion.div>
               );
             })
@@ -83,5 +96,23 @@ export function AgentActivityFeed({
         <div ref={bottomRef} />
       </div>
     </div>
+  );
+}
+
+function ProtocolMessage({ text }: { text: string }) {
+  const parts = text.split(/(JUGAAD_(?:QUERY|RESPONSE)\|[^\s]+|agent1q[^\s]+|SEND|RECV|ChatMessage)/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (/^(JUGAAD_|agent1q|SEND|RECV|ChatMessage)/.test(part)) {
+          return (
+            <span key={i} className="text-emerald-400/90">
+              {part}
+            </span>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
   );
 }

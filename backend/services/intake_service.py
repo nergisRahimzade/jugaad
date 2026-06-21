@@ -7,8 +7,32 @@ from core.arize_logger import logged_complete
 # In-memory session store — Person 3's Redis will slot in here without touching routers
 _sessions: dict[str, IntakeSession] = {}
 
-MIN_QUESTIONS = 6
-MAX_QUESTIONS = 10  # Force extraction with defaults if conversation runs long
+MIN_QUESTIONS = 8  # enough turns for citizenship + core fields before extraction
+MAX_QUESTIONS = 12  # force completion with defaults if conversation runs long
+
+# Assistant must ask about citizenship before we extract a profile.
+_CITIZENSHIP_ASK_MARKERS = (
+    "citizenship",
+    "citizen",
+    "daca",
+    "undocumented",
+    "permanent resident",
+    "comfortable sharing",
+    "immigration status",
+)
+
+
+def _citizenship_was_asked(session: IntakeSession) -> bool:
+    assistant_text = " ".join(
+        m["content"].lower() for m in session.messages if m["role"] == "assistant"
+    )
+    return any(marker in assistant_text for marker in _CITIZENSHIP_ASK_MARKERS)
+
+
+def _should_attempt_extract(session: IntakeSession) -> bool:
+    if session.questions_asked < MIN_QUESTIONS:
+        return False
+    return _citizenship_was_asked(session)
 
 
 def start_session() -> tuple[str, str]:
@@ -43,15 +67,15 @@ def continue_session(session_id: str, answer: str) -> dict:
     # Append student's answer to message history
     session.messages.append({"role": "user", "content": answer})
 
-    # Decide: ask more or extract
-    if session.questions_asked >= MIN_QUESTIONS:
+    # Decide: ask more or extract (only after citizenship has been asked)
+    if _should_attempt_extract(session):
         result = _try_extract(session)
         if result:
             return result
 
     # Hard cap — force complete with whatever we have so the user isn't stuck
     if session.questions_asked >= MAX_QUESTIONS:
-        profile = StudentProfile()  # defaults
+        profile = StudentProfile(citizenship="unknown")
         session.profile = profile
         session.is_complete = True
         completion_msg = "Got it — I've built your profile. Let me pull up everything you qualify for."
@@ -74,7 +98,7 @@ def continue_session(session_id: str, answer: str) -> dict:
     session.questions_asked += 1
 
     # Check if Claude signaled completion in its response
-    if "let me pull up what you qualify for" in response.lower():
+    if "let me pull up what you qualify for" in response.lower() and _citizenship_was_asked(session):
         result = _try_extract(session)
         if result:
             return result
@@ -94,7 +118,7 @@ def _try_extract(session: IntakeSession) -> dict | None:
         for m in session.messages
     )
 
-    extraction_prompt = EXTRACTION_PROMPT.format(conversation=conversation)
+    extraction_prompt = EXTRACTION_PROMPT.replace("{conversation}", conversation)
 
     raw = logged_complete(
         system="You are a JSON extractor. Output only valid JSON.",

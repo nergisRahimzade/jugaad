@@ -20,7 +20,7 @@ const ModelCanvas = dynamic(() => import("./ModelCanvas").then((m) => m.ModelCan
 const LIVE_STATS = [
   { label: "Agents",   value: "8 live",   color: "text-berkeley-gold" },
   { label: "Network",  value: "testnet",  color: "text-emerald-400"   },
-  { label: "Protocol", value: "uAgents",  color: "text-blue-400"      },
+  { label: "Protocol", value: "Multi-agent", color: "text-blue-400" },
   { label: "Domains",  value: "6 active", color: "text-purple-400"    },
 ];
 
@@ -110,7 +110,7 @@ export function Hero3D({ className = "" }: Hero3DProps) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           </span>
-          <span className="text-xs font-mono text-white/30 tracking-wide">Fetch.ai testnet</span>
+          <span className="text-xs font-mono text-white/30 tracking-wide">Multi-agent routing</span>
         </div>
       </div>
     </div>

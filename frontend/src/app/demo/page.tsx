@@ -22,7 +22,7 @@ export default function DemoPage() {
           href="/agents"
           className="inline-flex items-center gap-1.5 mt-4 text-sm text-berkeley-gold hover:underline"
         >
-          Deep dive: Fetch.ai agent architecture <ArrowRight size={14} />
+          Deep dive: how the agent system works <ArrowRight size={14} />
         </Link>
       </div>
 

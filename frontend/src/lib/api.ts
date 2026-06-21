@@ -3,7 +3,95 @@
  * Base URL defaults to localhost:8000 in dev; set NEXT_PUBLIC_API_URL in production.
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import type { AgentEvent } from "./types";
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8001";
+
+export type CoordinatorStreamEvent =
+  | { type: "meta"; agents: string[]; requestId?: string }
+  | { type: "agent_event"; event: Omit<AgentEvent, "id" | "timestamp"> }
+  | { type: "chunk"; text: string };
+
+async function* readSseStream(
+  res: Response,
+  parseMetaJson = false
+): AsyncGenerator<string | CoordinatorStreamEvent> {
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("No response stream");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      if (buffer.trim()) {
+        for (const line of buffer.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6);
+          if (payload === "[DONE]") return;
+        if (parseMetaJson && payload.startsWith("{")) {
+          try {
+            const parsed = JSON.parse(payload) as {
+              type?: string;
+              agents?: string[];
+              requestId?: string;
+              event?: Omit<AgentEvent, "id" | "timestamp">;
+            };
+            if (parsed.type === "meta" && parsed.agents) {
+              yield { type: "meta", agents: parsed.agents, requestId: parsed.requestId };
+              continue;
+            }
+            if (parsed.type === "agent_event" && parsed.event) {
+              yield { type: "agent_event", event: parsed.event };
+              continue;
+            }
+          } catch {
+            // fall through
+          }
+        }
+          yield payload;
+        }
+      }
+      break;
+    }
+
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() ?? "";
+
+    for (const part of parts) {
+      for (const line of part.split("\n")) {
+        if (!line.startsWith("data: ")) continue;
+        const payload = line.slice(6);
+        if (payload === "[DONE]") return;
+
+        if (parseMetaJson && payload.startsWith("{")) {
+          try {
+            const parsed = JSON.parse(payload) as {
+              type?: string;
+              agents?: string[];
+              requestId?: string;
+              event?: Omit<AgentEvent, "id" | "timestamp">;
+            };
+            if (parsed.type === "meta" && parsed.agents) {
+              yield { type: "meta", agents: parsed.agents, requestId: parsed.requestId };
+              continue;
+            }
+            if (parsed.type === "agent_event" && parsed.event) {
+              yield { type: "agent_event", event: parsed.event };
+              continue;
+            }
+          } catch {
+            // fall through as text chunk
+          }
+        }
+
+        yield payload;
+      }
+    }
+  }
+}
 
 export interface StudentProfile {
   campus: string;
@@ -141,5 +229,60 @@ export const api = {
     formData.append("file", audio, "recording.webm");
     const data = await postForm<{ transcript: string }>("/speech/transcribe", formData);
     return data.transcript;
+  },
+
+  streamChat: async function* (
+    message: string,
+    messages: { role: string; content: string }[],
+    options?: { profile?: StudentProfile | null; domain?: string }
+  ): AsyncGenerator<string> {
+    const res = await fetch(`${BASE_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        messages,
+        profile: options?.profile ?? null,
+        domain: options?.domain ?? null,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    for await (const event of readSseStream(res)) {
+      if (typeof event === "string") yield event;
+    }
+  },
+
+  streamCoordinator: async function* (
+    message: string,
+    messages: { role: string; content: string }[],
+    options?: { profile?: StudentProfile | null }
+  ): AsyncGenerator<CoordinatorStreamEvent> {
+    const res = await fetch(`${BASE_URL}/chat/coordinator`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message,
+        messages,
+        profile: options?.profile ?? null,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+
+    for await (const event of readSseStream(res, true)) {
+      if (typeof event === "string") {
+        yield { type: "chunk", text: event };
+      } else {
+        yield event;
+      }
+    }
   },
 };
