@@ -74,6 +74,18 @@ async function get<T>(path: string): Promise<T> {
   return res.json();
 }
 
+async function postForm<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`API error ${res.status}: ${err}`);
+  }
+  return res.json();
+}
+
 export const api = {
   intakeStart: (): Promise<IntakeStartResponse> => post("/intake/start", {}),
 
@@ -112,4 +124,11 @@ export const api = {
 
   demoMaria: (): Promise<{ profile: StudentProfile; persona: string }> =>
     get("/demo/maria"),
+
+  transcribeAudio: async (audio: Blob): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", audio, "recording.webm");
+    const data = await postForm<{ transcript: string }>("/speech/transcribe", formData);
+    return data.transcript;
+  },
 };

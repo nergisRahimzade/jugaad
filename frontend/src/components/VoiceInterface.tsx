@@ -4,17 +4,24 @@ import { useCallback, useState } from "react";
 import { Mic, MicOff, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { DEMO_QUERIES, simulateDemo } from "@/lib/demo-simulator";
+import { useSpeechToText } from "@/lib/useSpeechToText";
 import { AgentActivityFeed } from "./AgentActivityFeed";
 import { AgentNetwork } from "./AgentNetwork";
 import type { AgentDomain, AgentEvent, DemoResult } from "@/lib/types";
 
 export function VoiceInterface() {
-  const [listening, setListening] = useState(false);
   const [query, setQuery] = useState("");
   const [running, setRunning] = useState(false);
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [result, setResult] = useState<DemoResult | null>(null);
-  const [transcript, setTranscript] = useState("");
+
+  const {
+    listening,
+    transcribing,
+    transcript,
+    error: speechError,
+    toggleListening,
+  } = useSpeechToText();
 
   const activeAgents: AgentDomain[] = result
     ? ["coordinator", ...result.routedDomains]
@@ -28,7 +35,6 @@ export function VoiceInterface() {
     setRunning(true);
     setEvents([]);
     setResult(null);
-    setTranscript(text);
 
     const res = await simulateDemo(text, (event) => {
       setEvents((prev) => [...prev, event]);
@@ -38,20 +44,21 @@ export function VoiceInterface() {
     setRunning(false);
   }, [running]);
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
+    if (running || transcribing) return;
+
     if (listening) {
-      setListening(false);
+      const text = await toggleListening();
+      if (text.trim()) {
+        await submit(text);
+      }
       return;
     }
-    setListening(true);
-    // Demo: simulate voice input after 2s (Deepgram integration point)
-    setTimeout(() => {
-      const demo = DEMO_QUERIES[0].query;
-      setTranscript(demo);
-      setListening(false);
-      submit(demo);
-    }, 2000);
+
+    await toggleListening();
   };
+
+  const busy = running || transcribing;
 
   return (
     <div className="grid lg:grid-cols-5 gap-6">
@@ -59,21 +66,22 @@ export function VoiceInterface() {
       <div className="lg:col-span-2 space-y-4">
         <div className="glass rounded-2xl p-6 flex flex-col items-center text-center">
           <p className="text-xs font-mono text-muted uppercase tracking-wider mb-6">
-            Voice-First Interface · Deepgram STT/TTS
+            Voice-First Interface · Deepgram STT
           </p>
 
           <motion.button
             type="button"
             onClick={toggleMic}
-            disabled={running}
+            disabled={busy}
             whileTap={{ scale: 0.95 }}
             className={`relative flex h-28 w-28 items-center justify-center rounded-full border-2 transition-all ${
               listening
                 ? "border-red-400 bg-red-500/20 shadow-lg shadow-red-500/30"
-                : running
+                : busy
                   ? "border-berkeley-gold/50 bg-berkeley-gold/10"
                   : "border-berkeley-gold bg-berkeley-gold/10 hover:bg-berkeley-gold/20 hover:shadow-lg hover:shadow-berkeley-gold/20"
             }`}
+            aria-label={listening ? "Stop recording" : "Start recording"}
           >
             {listening && (
               <span className="absolute inset-0 rounded-full border-2 border-red-400 animate-pulse-ring" />
@@ -87,11 +95,17 @@ export function VoiceInterface() {
 
           <p className="mt-4 text-sm text-muted">
             {listening
-              ? "Listening… (Deepgram STT)"
-              : running
-                ? "Agents processing your request…"
-                : "Press to speak your problem"}
+              ? "Listening… tap again when done"
+              : transcribing
+                ? "Transcribing with Deepgram…"
+                : running
+                  ? "Agents processing your request…"
+                  : "Press to speak your problem"}
           </p>
+
+          {speechError && (
+            <p className="mt-3 text-xs text-red-400/90">{speechError}</p>
+          )}
 
           {transcript && (
             <div className="mt-4 w-full rounded-xl bg-black/30 border border-white/10 p-4 text-left">
@@ -116,7 +130,7 @@ export function VoiceInterface() {
             <button
               type="button"
               onClick={() => submit(query)}
-              disabled={running || !query.trim()}
+              disabled={busy || !query.trim()}
               className="rounded-xl bg-white/10 px-4 py-2.5 text-white hover:bg-white/15 disabled:opacity-50 transition"
             >
               <Send size={18} />
@@ -128,7 +142,7 @@ export function VoiceInterface() {
                 key={label}
                 type="button"
                 onClick={() => submit(q)}
-                disabled={running}
+                disabled={busy}
                 className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-muted hover:text-white transition disabled:opacity-50"
               >
                 {label}
@@ -154,7 +168,6 @@ export function VoiceInterface() {
             <div className="flex items-center gap-2 mb-3">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-sm font-semibold text-white">Agent Response</span>
-              <span className="text-xs text-muted ml-auto">Deepgram TTS playback ready</span>
             </div>
             <p className="text-sm text-white/85 leading-relaxed whitespace-pre-wrap">
               {result.mergedPlan.split("\n").slice(0, 8).join("\n")}

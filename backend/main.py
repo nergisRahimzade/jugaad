@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from routers import intake, recommend, apply_now, chat, calfresh, checklist, demo
+from routers import intake, recommend, apply_now, chat, calfresh, checklist, demo, speech
 
 app = FastAPI(title="Jugaad API", version="1.0.0")
 
@@ -21,6 +21,7 @@ app.include_router(chat.router, tags=["chat"])
 app.include_router(calfresh.router, tags=["calfresh"])
 app.include_router(checklist.router, tags=["checklist"])
 app.include_router(demo.router, prefix="/demo", tags=["demo"])
+app.include_router(speech.router, prefix="/speech", tags=["speech"])
 
 
 @app.get("/health")
