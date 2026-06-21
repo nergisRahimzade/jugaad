@@ -25,6 +25,8 @@ from addresses import SPECIALIST_ADDRESSES
 from messages import format_query, format_response, parse_response
 from routing import route_domains
 
+agent = Agent()
+
 chat_protocol = Protocol(spec=chat_protocol_spec)
 
 
@@ -138,6 +140,11 @@ async def handle_chat(ctx: Context, sender: str, msg: ChatMessage) -> None:
                 content=[TextContent(type="text", text=format_query(request_id, user_text))],
             ),
         )
+
+
+@chat_protocol.on_message(ChatAcknowledgement)
+async def handle_ack(ctx: Context, sender: str, msg: ChatAcknowledgement) -> None:
+    pass
 
 
 agent.include(chat_protocol, publish_manifest=True)
