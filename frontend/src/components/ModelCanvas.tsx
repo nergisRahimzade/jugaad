@@ -2,37 +2,175 @@
 
 import { Suspense, useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Float, MeshDistortMaterial, OrbitControls, Sphere } from "@react-three/drei";
+import { OrbitControls, Sphere } from "@react-three/drei";
+import { EffectComposer, Bloom, ChromaticAberration } from "@react-three/postprocessing";
+import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
 
-const AGENT_NODES = [
-  { speed: 0.4,  radius: 2.1, yAmplitude: 0.3, color: "#34d399", phase: 0 },
-  { speed: 0.28, radius: 2.4, yAmplitude: 0.5, color: "#a78bfa", phase: 1.26 },
-  { speed: 0.52, radius: 1.9, yAmplitude: 0.2, color: "#f87171", phase: 2.51 },
-  { speed: 0.35, radius: 2.3, yAmplitude: 0.6, color: "#e879f9", phase: 3.77 },
-  { speed: 0.45, radius: 2.0, yAmplitude: 0.4, color: "#38bdf8", phase: 5.03 },
+/* ─── Orb ─── */
+function CoreOrb() {
+  const meshRef = useRef<THREE.Mesh>(null);
+  const matRef  = useRef<THREE.ShaderMaterial | null>(null);
+
+  const material = useMemo(() => {
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime:   { value: 0 },
+        uColor1: { value: new THREE.Color("#fdb515") },
+        uColor2: { value: new THREE.Color("#001a40") },
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
+        uniform float uTime;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec3 p = position;
+          float n = sin(p.x * 3.2 + uTime * 0.55)
+                  * cos(p.y * 2.8 + uTime * 0.38)
+                  * sin(p.z * 2.2 + uTime * 0.47);
+          p += normal * n * 0.075;
+          vWorldPos = (modelMatrix * vec4(p, 1.0)).xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        varying vec3 vWorldPos;
+        uniform float uTime;
+        uniform vec3 uColor1;
+        uniform vec3 uColor2;
+        void main() {
+          vec3 viewDir = normalize(cameraPosition - vWorldPos);
+          float fresnel = pow(1.0 - clamp(dot(vNormal, viewDir), 0.0, 1.0), 2.2);
+          float pulse = 0.5 + 0.5 * sin(uTime * 0.7);
+          vec3 base = mix(uColor2, uColor1 * 0.55, fresnel * 0.65 + pulse * 0.12);
+          vec3 rim  = uColor1 * pow(fresnel, 1.4) * 1.4;
+          gl_FragColor = vec4(base + rim, 1.0);
+        }
+      `,
+    });
+    matRef.current = mat;
+    return mat;
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (matRef.current) {
+      (matRef.current.uniforms.uTime as { value: number }).value = clock.elapsedTime;
+    }
+  });
+
+  return (
+    <Sphere ref={meshRef} args={[1.15, 128, 128]}>
+      <primitive object={material} attach="material" />
+    </Sphere>
+  );
+}
+
+/* ─── Animated rings ─── */
+const RINGS = [
+  { radius: 1.65, tube: 0.007, tilt: [Math.PI / 2, 0, 0],           color: "#fdb515", emissive: 1.2, speed: 0.18 },
+  { radius: 2.10, tube: 0.005, tilt: [Math.PI / 2.2, 0.4, 0.2],     color: "#60a5fa", emissive: 0.6, speed: -0.12 },
+  { radius: 2.55, tube: 0.004, tilt: [Math.PI / 3.2, 0.9, 0.6],     color: "#a78bfa", emissive: 0.4, speed: 0.09 },
+  { radius: 2.95, tube: 0.003, tilt: [Math.PI / 2.8, -0.5, 0.3],    color: "#38bdf8", emissive: 0.25, speed: -0.07 },
+] as const;
+
+function Rings() {
+  const refs = useRef<(THREE.Mesh | null)[]>([]);
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime;
+    RINGS.forEach(({ speed }, i) => {
+      const m = refs.current[i];
+      if (m) m.rotation.z = t * speed;
+    });
+  });
+
+  return (
+    <>
+      {RINGS.map(({ radius, tube, tilt, color, emissive }, i) => (
+        <mesh
+          key={i}
+          ref={(el) => { refs.current[i] = el; }}
+          rotation={tilt as unknown as [number, number, number]}
+        >
+          <torusGeometry args={[radius, tube, 16, 160]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={emissive}
+            transparent
+            opacity={i === 0 ? 0.9 : 0.35 - i * 0.05}
+          />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+/* ─── Orbiting nodes ─── */
+const NODES = [
+  { speed: 0.38,  r: 2.1,  yAmp: 0.28, color: "#34d399", phase: 0,    size: 0.09 },
+  { speed: 0.27,  r: 2.45, yAmp: 0.45, color: "#a78bfa", phase: 1.26, size: 0.08 },
+  { speed: 0.50,  r: 1.92, yAmp: 0.18, color: "#f87171", phase: 2.51, size: 0.07 },
+  { speed: 0.33,  r: 2.32, yAmp: 0.55, color: "#fdb515", phase: 3.77, size: 0.10 },
+  { speed: 0.44,  r: 2.02, yAmp: 0.38, color: "#38bdf8", phase: 5.03, size: 0.07 },
+  { speed: 0.22,  r: 2.72, yAmp: 0.60, color: "#e879f9", phase: 4.20, size: 0.06 },
 ];
 
-function Particles({ count = 60 }) {
+function Node({ speed, r, yAmp, color, phase, size }: (typeof NODES)[0]) {
+  const ref = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime * speed + phase;
+    if (ref.current) {
+      ref.current.position.set(
+        Math.cos(t) * r,
+        Math.sin(t * 0.65) * yAmp,
+        Math.sin(t) * r
+      );
+      ref.current.scale.setScalar(1 + Math.sin(t * 1.8) * 0.09);
+    }
+  });
+
+  return (
+    <mesh ref={ref}>
+      <sphereGeometry args={[size, 16, 16]} />
+      <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2.5} roughness={0} metalness={0} />
+    </mesh>
+  );
+}
+
+/* ─── Particle field ─── */
+function Particles({ count = 120 }) {
   const ref = useRef<THREE.Points>(null);
 
-  const positions = useMemo(() => {
+  const [positions, colors] = useMemo(() => {
     const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+    const palette = [
+      new THREE.Color("#fdb515"),
+      new THREE.Color("#60a5fa"),
+      new THREE.Color("#a78bfa"),
+      new THREE.Color("#ffffff"),
+    ];
     for (let i = 0; i < count; i++) {
-      const r = 4.5 + Math.random() * 2.5;
+      const r = 4.0 + Math.random() * 3.5;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
       pos[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
       pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       pos[i * 3 + 2] = r * Math.cos(phi);
+      const c = palette[Math.floor(Math.random() * palette.length)];
+      col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
-    return pos;
+    return [pos, col];
   }, [count]);
 
-  useFrame((state) => {
+  useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = state.clock.elapsedTime * 0.035;
-      ref.current.rotation.x = state.clock.elapsedTime * 0.012;
+      ref.current.rotation.y = clock.elapsedTime * 0.03;
+      ref.current.rotation.x = Math.sin(clock.elapsedTime * 0.01) * 0.15;
     }
   });
 
@@ -40,131 +178,81 @@ function Particles({ count = 60 }) {
     <points ref={ref}>
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-color"    args={[colors, 3]} />
       </bufferGeometry>
       <pointsMaterial
-        color="#fdb515"
-        size={0.025}
+        vertexColors
+        size={0.028}
         sizeAttenuation
         transparent
-        opacity={0.35}
+        opacity={0.5}
         depthWrite={false}
       />
     </points>
   );
 }
 
-function AgentNode({ speed, radius, yAmplitude, color, phase }: (typeof AGENT_NODES)[0]) {
-  const ref = useRef<THREE.Mesh>(null);
-
-  useFrame((state) => {
-    const t = state.clock.elapsedTime * speed + phase;
-    const x = Math.cos(t) * radius;
-    const y = Math.sin(t * 0.7) * yAmplitude;
-    const z = Math.sin(t) * radius;
-    if (ref.current) {
-      ref.current.position.set(x, y, z);
-      const s = 1 + Math.sin(t * 2) * 0.07;
-      ref.current.scale.setScalar(s);
-    }
-  });
-
-  return (
-    <mesh ref={ref}>
-      <sphereGeometry args={[0.09, 16, 16]} />
-      <meshStandardMaterial
-        color={color}
-        emissive={color}
-        emissiveIntensity={1.0}
-        roughness={0.1}
-        metalness={0.1}
-      />
-    </mesh>
-  );
-}
-
-function JugaadCore() {
+/* ─── Scene ─── */
+function Scene() {
   const groupRef = useRef<THREE.Group>(null);
 
-  useFrame((state) => {
+  useFrame(({ clock }) => {
     if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.elapsedTime * 0.15;
+      groupRef.current.rotation.y = clock.elapsedTime * 0.08;
     }
   });
 
   return (
-    <group ref={groupRef}>
-      {/* Central orb */}
-      <Float speed={1.5} rotationIntensity={0.3} floatIntensity={0.5}>
-        <Sphere args={[1.1, 128, 128]}>
-          <MeshDistortMaterial
-            color="#03173d"
-            emissive="#fdb515"
-            emissiveIntensity={0.22}
-            roughness={0.1}
-            metalness={0.9}
-            distort={0.22}
-            speed={1.5}
-          />
-        </Sphere>
-      </Float>
-
-      {/* Inner gold ring */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[1.55, 0.007, 16, 120]} />
-        <meshStandardMaterial
-          color="#fdb515"
-          emissive="#fdb515"
-          emissiveIntensity={0.9}
-          transparent
-          opacity={0.55}
-        />
-      </mesh>
-
-      {/* Tilted accent rings */}
-      {[
-        { r: 2.0, rot: [Math.PI / 2.4, 0.3, 0.1] as [number, number, number], color: "#60a5fa" },
-        { r: 2.5, rot: [Math.PI / 3,   0.8, 0.5] as [number, number, number], color: "#a78bfa" },
-      ].map(({ r, rot, color }, i) => (
-        <mesh key={i} rotation={rot}>
-          <torusGeometry args={[r, 0.005, 16, 120]} />
-          <meshStandardMaterial color={color} transparent opacity={0.18} />
-        </mesh>
-      ))}
-
-      {/* Orbiting nodes */}
-      {AGENT_NODES.map((node, i) => (
-        <AgentNode key={i} {...node} />
-      ))}
-    </group>
-  );
-}
-
-function Scene() {
-  return (
     <>
-      <ambientLight intensity={0.2} />
-      <pointLight position={[6, 6, 6]} intensity={2} color="#fdb515" />
-      <pointLight position={[-8, -4, -8]} intensity={0.8} color="#60a5fa" />
-      <pointLight position={[0, 8, 0]} intensity={0.4} color="#ffffff" />
+      {/* Lighting */}
+      <ambientLight intensity={0.15} />
+      <pointLight position={[5, 5, 5]}    intensity={3}   color="#fdb515" />
+      <pointLight position={[-6, -3, -6]} intensity={1.2} color="#60a5fa" />
+      <pointLight position={[0, 7, 2]}    intensity={0.6} color="#a78bfa" />
+      <pointLight position={[3, -5, 4]}   intensity={0.4} color="#34d399" />
+
       <Particles />
-      <JugaadCore />
+
+      <group ref={groupRef}>
+        <CoreOrb />
+        <Rings />
+        {NODES.map((node, i) => <Node key={i} {...node} />)}
+      </group>
+
+      {/* Bloom + subtle chromatic aberration */}
+      <EffectComposer>
+        <Bloom
+          intensity={0.8}
+          luminanceThreshold={0.4}
+          luminanceSmoothing={0.6}
+          mipmapBlur
+        />
+        <ChromaticAberration
+          blendFunction={BlendFunction.NORMAL}
+          offset={new THREE.Vector2(0.0006, 0.0006)}
+          radialModulation={false}
+          modulationOffset={0}
+        />
+      </EffectComposer>
+
       <OrbitControls
         enableZoom={false}
         enablePan={false}
         autoRotate
-        autoRotateSpeed={0.5}
-        maxPolarAngle={Math.PI / 1.6}
-        minPolarAngle={Math.PI / 3.5}
+        autoRotateSpeed={0.4}
+        maxPolarAngle={Math.PI / 1.65}
+        minPolarAngle={Math.PI / 3.2}
       />
     </>
   );
 }
 
+/* ─── Canvas ─── */
 export function ModelCanvas() {
   return (
     <Canvas
-      camera={{ position: [0, 1.5, 6], fov: 42 }}
-      gl={{ antialias: true, alpha: true }}
+      camera={{ position: [0, 1.8, 6.5], fov: 40 }}
+      gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
       style={{ background: "transparent" }}
       dpr={[1, 2]}
     >
