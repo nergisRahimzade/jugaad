@@ -21,8 +21,8 @@ For each folder below, on [agentverse.ai](https://agentverse.ai) → **My Agents
 For each specialist:
 
 1. Open the agent editor
-2. Replace default `agent.py` with the code from this folder's `agent.py`
-3. Add a new file `messages.py` — paste from the same folder's `messages.py`
+2. Replace the entire `agent.py` with the code from this folder's `agent.py` (**one file only**)
+3. Delete `messages.py` if you added it earlier (not needed anymore)
 4. Click **Run**
 5. Copy the agent **address** (`agent1q...`) from the overview
 
