@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, ArrowRight, Loader2, Mic, MicOff } from "lucide-react";
 import { api, StudentProfile, IntakeStartResponse } from "@/lib/api";
 import { useSpeechToText } from "@/lib/useSpeechToText";
+import { useTextToSpeech } from "@/lib/useTextToSpeech";
 
 interface Message {
   role: "assistant" | "user";
@@ -84,6 +85,8 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // True when the pending input was filled by voice (so we reply with voice).
+  const spokenInput = useRef(false);
 
   const {
     listening,
@@ -92,6 +95,8 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
     toggleListening,
     setError: setSpeechError,
   } = useSpeechToText();
+
+  const { speak, stop: stopSpeaking } = useTextToSpeech();
 
   // Start the session on mount
   useEffect(() => {
@@ -126,6 +131,10 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
     const text = input.trim();
     if (!text || !sessionId || loading || completedProfile) return;
 
+    const spoken = spokenInput.current;
+    spokenInput.current = false;
+    stopSpeaking();
+
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
@@ -138,6 +147,11 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
         ...prev,
         { role: "assistant", content: res.message },
       ]);
+
+      // Reply with voice when the user answered by voice.
+      if (spoken && res.message.trim()) {
+        void speak(res.message);
+      }
 
       if (res.is_complete && res.profile) {
         setCompletedProfile(res.profile);
@@ -166,6 +180,7 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
       const text = await toggleListening();
       if (text.trim()) {
         setInput(text);
+        spokenInput.current = true;
         inputRef.current?.focus();
       }
       return;
@@ -297,7 +312,10 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
               ref={inputRef}
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                spokenInput.current = false;
+              }}
               onKeyDown={handleKey}
               placeholder={
                 listening

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     arize_api_key: str = ""
 
     deepgram_api_key: str = ""
+    deepgram_tts_model: str = "aura-2-thalia-en"
     resend_api_key: str = ""
 
     # ---- Redis core (vector store over the hack knowledge graph) ----

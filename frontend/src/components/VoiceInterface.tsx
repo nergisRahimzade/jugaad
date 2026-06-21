@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { Mic, MicOff, Send } from "lucide-react";
+import { Mic, MicOff, Send, Volume2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { DEMO_QUERIES, simulateDemo } from "@/lib/demo-simulator";
 import { useSpeechToText } from "@/lib/useSpeechToText";
+import { useTextToSpeech } from "@/lib/useTextToSpeech";
 import { AgentActivityFeed } from "./AgentActivityFeed";
 import { AgentNetwork } from "./AgentNetwork";
 import type { AgentDomain, AgentEvent, DemoResult } from "@/lib/types";
@@ -23,14 +24,17 @@ export function VoiceInterface() {
     toggleListening,
   } = useSpeechToText();
 
+  const { speaking, synthesizing, speak, stop: stopSpeaking } = useTextToSpeech();
+
   const activeAgents: AgentDomain[] = result
     ? ["coordinator", ...result.routedDomains]
     : running
       ? ["coordinator"]
       : [];
 
-  const submit = useCallback(async (text: string) => {
+  const submit = useCallback(async (text: string, spoken = false) => {
     if (!text.trim() || running) return;
+    stopSpeaking();
     setQuery(text);
     setRunning(true);
     setEvents([]);
@@ -42,15 +46,25 @@ export function VoiceInterface() {
 
     setResult(res);
     setRunning(false);
-  }, [running]);
+
+    // Speak the response back when the user asked by voice.
+    if (spoken && res.mergedPlan.trim()) {
+      void speak(res.mergedPlan);
+    }
+  }, [running, speak, stopSpeaking]);
 
   const toggleMic = async () => {
     if (running || transcribing) return;
 
+    if (speaking) {
+      stopSpeaking();
+      return;
+    }
+
     if (listening) {
       const text = await toggleListening();
       if (text.trim()) {
-        await submit(text);
+        await submit(text, true);
       }
       return;
     }
@@ -66,7 +80,7 @@ export function VoiceInterface() {
       <div className="lg:col-span-2 space-y-4">
         <div className="glass rounded-2xl p-6 flex flex-col items-center text-center">
           <p className="text-xs font-mono text-muted uppercase tracking-wider mb-6">
-            Voice-First Interface · Deepgram STT
+            Voice-First Interface · Deepgram STT/TTS
           </p>
 
           <motion.button
@@ -77,16 +91,26 @@ export function VoiceInterface() {
             className={`relative flex h-28 w-28 items-center justify-center rounded-full border-2 transition-all ${
               listening
                 ? "border-red-400 bg-red-500/20 shadow-lg shadow-red-500/30"
-                : busy
-                  ? "border-berkeley-gold/50 bg-berkeley-gold/10"
-                  : "border-berkeley-gold bg-berkeley-gold/10 hover:bg-berkeley-gold/20 hover:shadow-lg hover:shadow-berkeley-gold/20"
+                : speaking
+                  ? "border-emerald-400 bg-emerald-500/20 shadow-lg shadow-emerald-500/30"
+                  : busy
+                    ? "border-berkeley-gold/50 bg-berkeley-gold/10"
+                    : "border-berkeley-gold bg-berkeley-gold/10 hover:bg-berkeley-gold/20 hover:shadow-lg hover:shadow-berkeley-gold/20"
             }`}
-            aria-label={listening ? "Stop recording" : "Start recording"}
+            aria-label={
+              speaking ? "Stop playback" : listening ? "Stop recording" : "Start recording"
+            }
           >
-            {listening && (
-              <span className="absolute inset-0 rounded-full border-2 border-red-400 animate-pulse-ring" />
+            {(listening || speaking) && (
+              <span
+                className={`absolute inset-0 rounded-full border-2 animate-pulse-ring ${
+                  speaking ? "border-emerald-400" : "border-red-400"
+                }`}
+              />
             )}
-            {listening ? (
+            {speaking ? (
+              <Volume2 size={36} className="text-emerald-400" />
+            ) : listening ? (
               <MicOff size={36} className="text-red-400" />
             ) : (
               <Mic size={36} className="text-berkeley-gold" />
@@ -100,7 +124,11 @@ export function VoiceInterface() {
                 ? "Transcribing with Deepgram…"
                 : running
                   ? "Agents processing your request…"
-                  : "Press to speak your problem"}
+                  : synthesizing
+                    ? "Generating voice with Deepgram…"
+                    : speaking
+                      ? "Speaking… tap to stop"
+                      : "Press to speak your problem"}
           </p>
 
           {speechError && (
