@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
 
     deepgram_api_key: str = ""
+    deepgram_tts_model: str = "aura-2-thalia-en"
 
 
 settings = Settings()

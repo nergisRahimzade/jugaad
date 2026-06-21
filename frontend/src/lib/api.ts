@@ -258,6 +258,19 @@ export const api = {
     return data.transcript;
   },
 
+  synthesizeSpeech: async (text: string): Promise<Blob> => {
+    const res = await fetch(`${BASE_URL}/speech/synthesize`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`API error ${res.status}: ${err}`);
+    }
+    return res.blob();
+  },
+
   streamChat: async function* (
     message: string,
     messages: { role: string; content: string }[],
