@@ -140,16 +140,16 @@ Specialist knowledge:
     return build_system_prompt(profile_context, coordinator_addendum)
 
 
-# Demo Agentverse addresses — replace via agents/config.py env vars in production
+# Fallback Agentverse addresses — env vars in agents/config.py take precedence
 _DEMO_ADDRESSES: dict[str, str] = {
-    "coordinator": "agent1q0coord…jugaad",
-    "food": "agent1q0food…8k2m",
-    "housing": "agent1q0hous…3n7p",
-    "financial_aid": "agent1q0fina…9x1q",
-    "scholarship": "agent1q0schl…4w8r",
-    "wellness": "agent1q0well…6t5v",
-    "safety": "agent1q0safe…2y3z",
-    "academic": "agent1q0acad…7h4j",
+    "coordinator": "agent1qt2jfktceux9wc0pxrxqxptjmmup80jeweqv7vc86hj20x8ewugh2wr9t63",
+    "food": "agent1qffq6r00xsyzv5rsee0828q3vf25ppuskag0hmj28xxuz2c2yn7yc4k9wfu",
+    "housing": "agent1q0ksgfc5749c6588sacxk9eje9lvcj76w9qdg5udpds8pwj80llp5j8m23y",
+    "financial_aid": "agent1qws7ljtvm9gj0m864ga4u7lf8l023wsn07ty7w2d65cr63vulq9p2praxyw",
+    "scholarship": "agent1qt8rpsv46ez0vg3s9un5ru5lfsku8vek979txvnn04uge9uzh4sdug58fzd",
+    "wellness": "agent1qgmz9nj2s6apnkg0zmn6ah9c9c5ekfedck0696ty8g73neg6744yvlnrfek",
+    "safety": "agent1q2qy2t9pl8cvvznpkz9jy72m05su59vq4g6y2ehk7n3sess3jdpt653c6f5",
+    "academic": "agent1qt9whv7cql87c725zdqd7l9cnvme4vjynf27zqckef7pkffaax6k756aqah",
 }
 
 _CROSS_INSIGHTS: dict[str, str] = {
