@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Home" },
-  { href: "/intake", label: "Get Help" },
+  { href: "/intake", label: "Get Started" },
   { href: "/dashboard", label: "My Resources" },
   { href: "/agents", label: "How It Works" },
 ];
@@ -71,7 +71,7 @@ export function Navbar() {
             boxShadow: "0 2px 16px rgba(253,181,21,0.25)",
           }}
         >
-          Get Help Free
+          Get Started Free
         </Link>
 
         {/* Mobile toggle */}
@@ -107,7 +107,7 @@ export function Navbar() {
             className="block mt-3 text-center rounded-full py-2.5 text-sm font-semibold"
             style={{ background: "linear-gradient(135deg, #fdb515, #ffcc55)", color: "#09080f" }}
           >
-            Get Help Free
+            Get Started Free
           </Link>
         </div>
       )}
