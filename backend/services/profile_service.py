@@ -162,10 +162,10 @@ def build_profile_addendum(analysis: ProfileAnalysis, domains: list[str]) -> str
     return f"""PROFILE — missing fields for this topic: {missing_labels}
 {partial}
 RULES:
-1. Still help with their question first — give 2–3 sentences of concrete, useful guidance using any profile info you have.
-2. Then ask exactly ONE short question to fill the biggest gap: {question}
-3. Do NOT ask multiple questions at once. Do NOT send them to a profile page.
-4. Keep it conversational — one friendly follow-up, not an interview."""
+1. ALWAYS use mandatory JUGAAD RESPONSE FORMAT first — Jugaad 1, Jugaad 2, Jugaad 3… with concrete hacks (dollar amounts, phones, addresses). Never replace hacks with a plain paragraph.
+2. End hacks with: Want me to [specific next step]?
+3. ONLY AFTER that line, add ONE short profile question on its own line: {question}
+4. Do NOT ask multiple questions. Do NOT send them to a profile page."""
 
 
 EXTRACT_SYSTEM = """Extract student profile fields from a Berkeley student chat.

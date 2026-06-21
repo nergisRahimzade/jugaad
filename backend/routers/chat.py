@@ -23,6 +23,7 @@ from agents.services.agentverse_client import chat_with_coordinator
 from agents.config import COORDINATOR_ADDRESS
 from services.data_layer_service import gather_domain_intel
 from services.demo_seed_service import match_demo_seed
+from services.jugaad_format_service import build_jugaad_response_from_intel
 from services.profile_service import (
     analyze_profile,
     build_profile_addendum,
@@ -36,10 +37,15 @@ _DEMO_SEEDS_ENABLED = os.getenv("DEMO_SEEDS_ENABLED", "1").strip().lower() not i
 
 
 async def _stream_text(text: str, chunk_size: int = 48):
-    """Yield plain SSE chunks for pre-seeded demo responses."""
+    """Yield SSE text chunks (JSON-encoded so newlines in Jugaad lines stay intact)."""
     for i in range(0, len(text), chunk_size):
-        yield f"data: {text[i : i + chunk_size]}\n\n"
+        payload = json.dumps(text[i : i + chunk_size])
+        yield f"data: {payload}\n\n"
         await asyncio.sleep(0.012)
+
+
+def _sse_text_chunk(chunk: str) -> str:
+    return f"data: {json.dumps(chunk)}\n\n"
 
 DOMAIN_PROMPTS: dict[str, str] = {
     "food": FOOD_DOMAIN,
@@ -86,7 +92,7 @@ async def coordinator_chat(request: CoordinatorRequest):
 
     analysis = analyze_profile(profile, domains, request.profile_initialized)
     profile_addendum = build_profile_addendum(analysis, domains)
-    data_context, intel_by_domain, _agent_responses = gather_domain_intel(
+    data_context, intel_by_domain, responses_by_domain = gather_domain_intel(
         request.message, domains, profile
     )
     request_id, orchestration_events = build_orchestration_events(
@@ -149,20 +155,33 @@ async def coordinator_chat(request: CoordinatorRequest):
             async for chunk in _stream_text(demo_seed.response):
                 yield chunk
         else:
-            system = build_coordinator_system(
+            profile_question = None
+            if analysis.missing_fields:
+                profile_question = analysis.top_question or "Tell me a bit more about your situation."
+            templated = build_jugaad_response_from_intel(
+                responses_by_domain,
                 domains,
-                analysis.context,
-                profile_addendum,
-                data_context,
-                agentverse_context=agentverse_context,
+                profile_question=profile_question,
             )
-            async for chunk in logged_stream(
-                system=system,
-                messages=history,
-                max_tokens=None,
-                trace_name="coordinator",
-            ):
-                yield f"data: {chunk}\n\n"
+            if templated:
+                async for chunk in _stream_text(templated):
+                    yield chunk
+            else:
+                system = build_coordinator_system(
+                    domains,
+                    analysis.context,
+                    profile_addendum,
+                    data_context,
+                    agentverse_context=agentverse_context,
+                )
+                async for chunk in logged_stream(
+                    system=system,
+                    messages=history,
+                    max_tokens=None,
+                    trace_name="coordinator",
+                    jugaad_format=True,
+                ):
+                    yield _sse_text_chunk(chunk)
         yield f'data: {json.dumps({"type": "agent_event", "event": {"agentId": "coordinator", "type": "merge", "message": "ChatMessage delivered to user (EndSessionContent)", "meta": {"requestId": request_id}}})}\n\n'
         yield "data: [DONE]\n\n"
 
@@ -193,6 +212,17 @@ async def chat(request: ChatRequest):
     system = build_system_prompt(analysis.context, domain_addendum)
 
     trace_name = f"agent_{request.domain}" if request.domain else "peer_navigator"
+    profile_question = None
+    if domains and analysis.missing_fields:
+        profile_question = analysis.top_question or "Tell me a bit more about your situation."
+    templated = None
+    if request.domain:
+        _, _, responses_by_domain = gather_domain_intel(request.message, domains, profile)
+        templated = build_jugaad_response_from_intel(
+            responses_by_domain,
+            domains,
+            profile_question=profile_question,
+        )
 
     async def event_stream():
         if request.domain:
@@ -205,13 +235,18 @@ async def chat(request: ChatRequest):
             if profile_patch:
                 meta["profilePatch"] = profile_patch
             yield f"data: {json.dumps(meta)}\n\n"
-        async for chunk in logged_stream(
-            system=system,
-            messages=history,
-            max_tokens=None,
-            trace_name=trace_name,
-        ):
-            yield f"data: {chunk}\n\n"
+        if templated:
+            async for chunk in _stream_text(templated):
+                yield chunk
+        else:
+            async for chunk in logged_stream(
+                system=system,
+                messages=history,
+                max_tokens=None,
+                trace_name=trace_name,
+                jugaad_format=True,
+            ):
+                yield _sse_text_chunk(chunk)
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

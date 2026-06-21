@@ -67,6 +67,14 @@ async function* readSseStream(
             // fall through
           }
         }
+        if (payload.startsWith('"')) {
+          try {
+            yield JSON.parse(payload) as string;
+            continue;
+          } catch {
+            // fall through
+          }
+        }
           yield payload;
         }
       }
@@ -111,6 +119,15 @@ async function* readSseStream(
             }
           } catch {
             // fall through as text chunk
+          }
+        }
+
+        if (payload.startsWith('"')) {
+          try {
+            yield JSON.parse(payload) as string;
+            continue;
+          } catch {
+            // fall through
           }
         }
 

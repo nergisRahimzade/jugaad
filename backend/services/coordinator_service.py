@@ -9,6 +9,7 @@ from prompts.domains.housing import HOUSING_DOMAIN
 from prompts.domains.safety import SAFETY_DOMAIN
 from prompts.domains.wellness import WELLNESS_DOMAIN
 from prompts.master import build_system_prompt
+from prompts.jugaad_format import JUGAAD_FORMAT_RULES
 
 DOMAIN_KEYWORDS: dict[str, list[str]] = {
     "food": ["food", "hungry", "groceries", "calfresh", "pantry", "meal", "eat", "starving"],
@@ -116,8 +117,8 @@ def build_coordinator_system(
     if not domains:
         coordinator_addendum = f"""COORDINATOR MODE — general question.
 
-Answer directly as Jugaad in 2–4 short sentences. Warm, human.
-Do NOT mention specialist agents. Do NOT dump resource lists unless they asked for help with something specific.
+Answer in the mandatory JUGAAD RESPONSE FORMAT (Jugaad 1, Jugaad 2…).
+Even for simple questions, if you mention any resource, use numbered Jugaad lines with specifics.
 
 {profile_block}"""
         return build_system_prompt(profile_context, coordinator_addendum)
@@ -126,16 +127,14 @@ Do NOT mention specialist agents. Do NOT dump resource lists unless they asked f
     domain_knowledge = "\n\n".join(DOMAIN_PROMPTS[d] for d in domains)
     coordinator_addendum = f"""COORDINATOR MODE — activated specialists (already shown in the UI as badges): {", ".join(labels)}
 
-Answer the student's question using specialist knowledge below.
+Answer the student's question using specialist knowledge and LIVE SPECIALIST AGENT OUTPUT below.
 
-CRITICAL FORMAT RULES:
-- Do NOT output an "Agents:" line or list agent names — the UI already shows them.
-- Do NOT repeat the agent names in your opening sentence.
-- Use plain text only (no markdown bold with **).
-- Write one short paragraph per activated specialist ({", ".join(labels)}), in that order.
-- Each paragraph MUST reflect that agent's LIVE SPECIALIST AGENT OUTPUT below (their Redis hacks, Browserbase crawl, and recommendations).
-- Start each paragraph with the agent role in plain words (e.g. "Food Agent:") so judges can see each agent contributed.
-- End with one concrete next step for the student.
+{JUGAAD_FORMAT_RULES}
+
+COORDINATOR-SPECIFIC:
+- Do NOT output an "Agents:" header — the UI already shows agent badges.
+- When multiple specialists activated, use continuous numbering (Jugaad 1, 2, 3…) across all domains — you may prefix with agent role inside the hack (e.g. "Jugaad 2 (Housing): BSC co-op…").
+- Pull facts from LIVE SPECIALIST AGENT OUTPUT below.
 
 {profile_block}
 
