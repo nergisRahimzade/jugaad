@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, ArrowRight, Loader2 } from "lucide-react";
+import { Send, ArrowRight, Loader2, Mic, MicOff } from "lucide-react";
 import { api, StudentProfile, IntakeStartResponse } from "@/lib/api";
+import { useSpeechToText } from "@/lib/useSpeechToText";
 
 interface Message {
   role: "assistant" | "user";
@@ -93,6 +94,14 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const {
+    listening,
+    transcribing,
+    error: speechError,
+    toggleListening,
+    setError: setSpeechError,
+  } = useSpeechToText();
+
   // Start the session on mount
   useEffect(() => {
     (async () => {
@@ -157,6 +166,24 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
       sendMessage();
     }
   };
+
+  const toggleVoice = async () => {
+    if (loading || completedProfile || transcribing) return;
+    setSpeechError(null);
+
+    if (listening) {
+      const text = await toggleListening();
+      if (text.trim()) {
+        setInput(text);
+        inputRef.current?.focus();
+      }
+      return;
+    }
+
+    await toggleListening();
+  };
+
+  const voiceBusy = listening || transcribing;
 
   const progress = Math.min((questionsAsked / totalQuestions) * 100, 100);
 
@@ -235,8 +262,8 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
       </div>
 
       {/* Error */}
-      {error && (
-        <p className="text-red-400/80 text-xs text-center mb-2">{error}</p>
+      {(error || speechError) && (
+        <p className="text-red-400/80 text-xs text-center mb-2">{error ?? speechError}</p>
       )}
 
       {/* Input or CTA */}
@@ -256,19 +283,46 @@ export default function IntakeChat({ onComplete }: IntakeChatProps) {
           </motion.button>
         ) : (
           <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={toggleVoice}
+              disabled={loading || !!completedProfile || voiceBusy && !listening}
+              className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-30 ${
+                listening
+                  ? "bg-red-500/20 border border-red-400/50 text-red-400"
+                  : "glass border border-white/10 text-white/70 hover:text-white"
+              }`}
+              aria-label={listening ? "Stop recording" : "Record voice answer"}
+            >
+              {listening ? (
+                <MicOff className="w-4 h-4" />
+              ) : transcribing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Mic className="w-4 h-4" />
+              )}
+            </button>
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
-              placeholder={loading ? "Jugaad is thinking…" : "Type your answer…"}
-              disabled={loading || !!completedProfile}
+              placeholder={
+                listening
+                  ? "Listening… tap mic when done"
+                  : transcribing
+                    ? "Transcribing…"
+                    : loading
+                      ? "Jugaad is thinking…"
+                      : "Type or speak your answer…"
+              }
+              disabled={loading || !!completedProfile || voiceBusy}
               className="flex-1 glass rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none border border-white/5 focus:border-white/15 transition-colors disabled:opacity-40"
             />
             <button
               onClick={sendMessage}
-              disabled={!input.trim() || loading || !!completedProfile}
+              disabled={!input.trim() || loading || !!completedProfile || voiceBusy}
               className="w-11 h-11 rounded-xl flex items-center justify-center transition-all disabled:opacity-30"
               style={{ background: "#fdb515" }}
               aria-label="Send"

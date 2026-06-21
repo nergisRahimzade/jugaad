@@ -15,5 +15,7 @@ class Settings(BaseSettings):
     redis_url: str = ""
     resend_api_key: str = ""
 
+    deepgram_api_key: str = ""
+
 
 settings = Settings()
